@@ -1,21 +1,17 @@
-import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { onAuthStateChange } from './services/authService';
+import { useUser } from './components/account/UserContext';
+import Navbar from './components/layout/Navbar';
 import LoginPage from './pages/Login/Login';
 import RegisterPage from './pages/Register/Register';
 import ForgotPasswordPage from './pages/ForgotPassword/ForgotPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Home from './pages/Home/Home';
 import About from './pages/About/About';
-import Navbar from './components/Navbar';
 import './App.css';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
-    const { isAuthenticated } = useSelector((state) => state.auth);
+    const { isAuthenticated } = useUser();
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
@@ -26,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
 
 // Public Only Route - chuyển hướng nếu đã đăng nhập
 const PublicOnlyRoute = ({ children }) => {
-    const { isAuthenticated } = useSelector((state) => state.auth);
+    const { isAuthenticated } = useUser();
 
     if (isAuthenticated) {
         return <Navigate to="/dashboard" replace />;
@@ -36,18 +32,10 @@ const PublicOnlyRoute = ({ children }) => {
 };
 
 function App() {
-    const dispatch = useDispatch();
-
-    // Theo dõi trạng thái xác thực khi ứng dụng khởi động
-    useEffect(() => {
-        const unsubscribe = onAuthStateChange(dispatch);
-        return () => unsubscribe(); // Cleanup khi component unmount
-    }, [dispatch]);
-
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className=" min-h-screen bg-gray-50">
             <Navbar />
-            <div className="container mx-auto py-8 px-4">
+            <div className="w-full h-full pt-20">
                 <Routes>
                     {/* Public routes */}
                     <Route path="/" element={<Home />} />
@@ -89,20 +77,6 @@ function App() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </div>
-
-            {/* Toast Container */}
-            <ToastContainer
-                position="top-right"
-                autoClose={3000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="light"
-            />
         </div>
     );
 }

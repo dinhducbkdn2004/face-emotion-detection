@@ -10,8 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/roboto": "^5.2.5",
+    "@mui/icons-material": "^7.0.1",
+    "@mui/material": "^7.0.1",
     "@reduxjs/toolkit": "^2.6.1",
+    "@toolpad/core": "^0.13.0",
     "firebase": "^11.5.0",
+    "framer-motion": "^12.6.3",
+    "gsap": "^3.12.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-redux": "^9.2.0",
