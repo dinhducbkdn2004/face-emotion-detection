@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Box } from '@mui/material';
 import { useUser } from './components/account/UserContext';
 import Navbar from './components/layout/Navbar';
 import LoginPage from './pages/Login/Login';
@@ -7,7 +8,8 @@ import ForgotPasswordPage from './pages/ForgotPassword/ForgotPassword';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Home from './pages/Home/Home';
 import About from './pages/About/About';
-import './App.css';
+import Profile from './pages/Profile/Profile';
+import Settings from './pages/Settings/Settings';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -33,9 +35,22 @@ const PublicOnlyRoute = ({ children }) => {
 
 function App() {
     return (
-        <div className=" min-h-screen bg-gray-50">
+        <Box
+            sx={{
+                minHeight: '100vh',
+                bgcolor: 'background.default',
+                color: 'text.primary',
+            }}
+        >
             <Navbar />
-            <div className="w-full h-full pt-20">
+            <Box
+                component="main"
+                sx={{
+                    width: '100%',
+                    height: '100%',
+                    pt: '80px', // 20 * 4 = 80px (equivalent to pt-20)
+                }}
+            >
                 <Routes>
                     {/* Public routes */}
                     <Route path="/" element={<Home />} />
@@ -73,11 +88,29 @@ function App() {
                         }
                     />
 
+                    {/* Profile and Settings routes */}
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <Profile />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/settings"
+                        element={
+                            <ProtectedRoute>
+                                <Settings />
+                            </ProtectedRoute>
+                        }
+                    />
+
                     {/* Fallback route */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 }
 

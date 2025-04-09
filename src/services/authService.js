@@ -187,6 +187,12 @@ export const resetPassword = async (email) => {
             ToastService.error('Không tìm thấy tài khoản với email này');
         } else if (error.code === 'auth/invalid-email') {
             ToastService.error('Email không hợp lệ');
+        } else if (error.code === 'auth/expired-action-code') {
+            ToastService.error('Liên kết đặt lại mật khẩu đã hết hạn');
+            window.location.href = '/forgot-password?expired=true';
+        } else if (error.code === 'auth/invalid-action-code') {
+            ToastService.error('Liên kết đặt lại mật khẩu không hợp lệ hoặc đã được sử dụng');
+            window.location.href = '/forgot-password?expired=true';
         } else {
             ToastService.error('Không thể gửi email đặt lại mật khẩu');
         }

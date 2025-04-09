@@ -1,19 +1,35 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from './UserContext';
-import ToastService from '../../toasts/ToastService';
+import {
+    Avatar,
+    Box,
+    Menu,
+    MenuItem,
+    Typography,
+    IconButton,
+    Divider,
+} from '@mui/material';
+import { KeyboardArrowDown as ArrowDownIcon } from '@mui/icons-material';
 
-/**
- * Component hiển thị thông tin tài khoản người dùng
- */
 const Account = () => {
     const { user, isAuthenticated, signOut } = useUser();
     const navigate = useNavigate();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+
+    const handleClick = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
 
     const handleLogout = async () => {
         const success = await signOut();
         if (success) {
+            handleClose();
             navigate('/login');
         }
     };
@@ -21,101 +37,148 @@ const Account = () => {
     // Nếu chưa đăng nhập
     if (!isAuthenticated || !user) {
         return (
-            <div className="flex items-center space-x-4">
-                <button
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                    component="button"
                     onClick={() => navigate('/login')}
-                    className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-500"
+                    sx={{
+                        color: 'inherit',
+                        textTransform: 'none',
+                        bgcolor: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.8 },
+                    }}
                 >
                     Đăng nhập
-                </button>
-                <button
+                </Typography>
+                <Typography
+                    component="button"
                     onClick={() => navigate('/register')}
-                    className="px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+                    sx={{
+                        color: 'inherit',
+                        bgcolor: 'primary.main',
+                        border: 'none',
+                        borderRadius: 1,
+                        px: 2,
+                        py: 1,
+                        cursor: 'pointer',
+                        '&:hover': { bgcolor: 'primary.dark' },
+                    }}
                 >
                     Đăng ký
-                </button>
-            </div>
+                </Typography>
+            </Box>
         );
     }
 
     // Lấy chữ cái đầu của tên người dùng
     const userInitials = user.displayName
         ? user.displayName
-              .split(' ')
-              .map((name) => name[0])
-              .join('')
-              .toUpperCase()
+            .split(' ')
+            .map((name) => name[0])
+            .join('')
+            .toUpperCase()
         : user.email
-          ? user.email[0].toUpperCase()
-          : 'U';
+            ? user.email[0].toUpperCase()
+            : 'U';
 
     return (
-        <div className="relative">
-            <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center space-x-2 focus:outline-none"
+        <>
+            <Box 
+                sx={{ 
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer'
+                }}
+                onClick={handleClick}
             >
-                {user.photoURL ? (
-                    <img
-                        src={user.photoURL}
-                        alt={user.displayName || user.email}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                    />
-                ) : (
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-medium">
-                        {userInitials}
-                    </div>
-                )}
-                <span className="text-sm font-medium text-gray-700 hidden md:block">
-                    {user.displayName || user.email}
-                </span>
-                <svg
-                    className="w-4 h-4 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                <Avatar
+                    src={user.photoURL || undefined}
+                    alt={user.displayName || user.email}
+                    sx={{ 
+                        width: 36,
+                        height: 36,
+                        bgcolor: 'primary.main',
+                        fontSize: '1rem'
+                    }}
                 >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19 9l-7 7-7-7"
-                    ></path>
-                </svg>
-            </button>
+                    {userInitials}
+                </Avatar>
+                <Typography
+                    sx={{
+                        ml: 1,
+                        display: { xs: 'none', md: 'block' },
+                        color: 'text.primary'
+                    }}
+                    variant="body2"
+                >
+                    {user.displayName || user.email}
+                </Typography>
+                <IconButton 
+                    size="small"
+                    sx={{ 
+                        ml: 0.5,
+                        color: 'text.primary',
+                        '&:hover': { bgcolor: 'transparent' }
+                    }}
+                >
+                    <ArrowDownIcon fontSize="small" />
+                </IconButton>
+            </Box>
 
-            {isMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-lg z-20">
-                    <div className="px-4 py-2 text-sm text-gray-700 border-b">
-                        <div className="font-medium">
-                            {user.displayName || 'Người dùng'}
-                        </div>
-                        <div className="text-gray-500 text-xs truncate">
-                            {user.email}
-                        </div>
-                    </div>
-                    <a
-                        href="#profile"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                        Hồ sơ của tôi
-                    </a>
-                    <a
-                        href="#settings"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                        Cài đặt
-                    </a>
-                    <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                        Đăng xuất
-                    </button>
-                </div>
-            )}
-        </div>
+            <Menu
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+                PaperProps={{
+                    elevation: 2,
+                    sx: {
+                        minWidth: 200,
+                        mt: 1.5,
+                    }
+                }}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+                <Box sx={{ px: 2, py: 1 }}>
+                    <Typography variant="subtitle2">
+                        {user.displayName || 'Người dùng'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                        {user.email}
+                    </Typography>
+                </Box>
+
+                <Divider />
+
+                <MenuItem 
+                    onClick={() => {
+                        handleClose();
+                        navigate('/profile');
+                    }}
+                >
+                    <Typography variant="body2">Hồ sơ của tôi</Typography>
+                </MenuItem>
+                <MenuItem 
+                    onClick={() => {
+                        handleClose();
+                        navigate('/settings');
+                    }}
+                >
+                    <Typography variant="body2">Cài đặt</Typography>
+                </MenuItem>
+                
+                <Divider />
+
+                <MenuItem 
+                    onClick={handleLogout}
+                    sx={{ color: 'error.main' }}
+                >
+                    <Typography variant="body2">Đăng xuất</Typography>
+                </MenuItem>
+            </Menu>
+        </>
     );
 };
 
