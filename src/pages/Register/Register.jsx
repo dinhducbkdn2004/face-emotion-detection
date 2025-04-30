@@ -47,25 +47,25 @@ const Register = () => {
         const errors = {};
 
         if (!email.trim()) {
-            errors.email = 'Email là bắt buộc';
+            errors.email = 'Email is required';
         } else if (!/\S+@\S+\.\S+/.test(email)) {
-            errors.email = 'Email không hợp lệ';
+            errors.email = 'Invalid email format';
         }
 
         if (!password) {
-            errors.password = 'Mật khẩu là bắt buộc';
+            errors.password = 'Password is required';
         } else if (password.length < 6) {
-            errors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+            errors.password = 'Password must be at least 6 characters';
         }
 
         if (!confirmPassword) {
-            errors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
+            errors.confirmPassword = 'Please confirm your password';
         } else if (confirmPassword !== password) {
-            errors.confirmPassword = 'Mật khẩu không khớp';
+            errors.confirmPassword = 'Passwords do not match';
         }
 
         if (!termsAccepted) {
-            errors.terms = 'Bạn phải đồng ý với điều khoản và chính sách';
+            errors.terms = 'You must agree to the terms and conditions';
         }
 
         setFormErrors(errors);
@@ -80,7 +80,7 @@ const Register = () => {
             await registerWithEmailAndPassword(email, password, dispatch);
             navigate('/dashboard');
         } catch (error) {
-            console.error('Đăng ký thất bại:', error);
+            console.error('Registration failed:', error);
         }
     };
 
@@ -89,7 +89,7 @@ const Register = () => {
             await loginWithGoogle(dispatch);
             navigate('/dashboard');
         } catch (error) {
-            console.error('Đăng ký Google thất bại:', error);
+            console.error('Google registration failed:', error);
         }
     };
 
@@ -105,18 +105,18 @@ const Register = () => {
         >
             <Box sx={modalStyle}>
                 {/* Header */}
-                <Box 
+                <Box
                     sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        mb: 3
+                        mb: 3,
                     }}
                 >
                     <Typography variant="h5" fontWeight="bold">
-                        Đăng Ký
+                        Register
                     </Typography>
-                    <IconButton 
+                    <IconButton
                         onClick={handleClose}
                         size="small"
                         sx={{ color: 'text.secondary' }}
@@ -127,13 +127,13 @@ const Register = () => {
 
                 {/* Error Message */}
                 {error && (
-                    <Box 
-                        sx={{ 
+                    <Box
+                        sx={{
                             mb: 2,
                             p: 1.5,
                             bgcolor: 'error.light',
                             borderRadius: 1,
-                            color: 'error.main'
+                            color: 'error.main',
                         }}
                     >
                         <Typography variant="body2">{error}</Typography>
@@ -157,7 +157,7 @@ const Register = () => {
 
                     <TextField
                         fullWidth
-                        label="Mật khẩu"
+                        label="Password"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -170,7 +170,7 @@ const Register = () => {
 
                     <TextField
                         fullWidth
-                        label="Xác nhận mật khẩu"
+                        label="Confirm Password"
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -187,14 +187,18 @@ const Register = () => {
                             control={
                                 <Checkbox
                                     checked={termsAccepted}
-                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    onChange={(e) =>
+                                        setTermsAccepted(e.target.checked)
+                                    }
                                     size="small"
-                                    color={formErrors.terms ? 'error' : 'primary'}
+                                    color={
+                                        formErrors.terms ? 'error' : 'primary'
+                                    }
                                 />
                             }
                             label={
                                 <Typography variant="body2">
-                                    Tôi đồng ý với{' '}
+                                    I agree to the{' '}
                                     <Link
                                         to="/terms"
                                         style={{ textDecoration: 'none' }}
@@ -203,12 +207,16 @@ const Register = () => {
                                             component="span"
                                             variant="body2"
                                             color="primary"
-                                            sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                            sx={{
+                                                '&:hover': {
+                                                    textDecoration: 'underline',
+                                                },
+                                            }}
                                         >
-                                            Điều khoản
+                                            Terms
                                         </Typography>
-                                    </Link>
-                                    {' '}và{' '}
+                                    </Link>{' '}
+                                    and{' '}
                                     <Link
                                         to="/privacy"
                                         style={{ textDecoration: 'none' }}
@@ -217,16 +225,24 @@ const Register = () => {
                                             component="span"
                                             variant="body2"
                                             color="primary"
-                                            sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                            sx={{
+                                                '&:hover': {
+                                                    textDecoration: 'underline',
+                                                },
+                                            }}
                                         >
-                                            Chính sách
+                                            Privacy Policy
                                         </Typography>
                                     </Link>
                                 </Typography>
                             }
                         />
                         {formErrors.terms && (
-                            <Typography variant="caption" color="error" sx={{ ml: 2 }}>
+                            <Typography
+                                variant="caption"
+                                color="error"
+                                sx={{ ml: 2 }}
+                            >
                                 {formErrors.terms}
                             </Typography>
                         )}
@@ -240,19 +256,19 @@ const Register = () => {
                         disabled={loading}
                         sx={{ mt: 2, py: 1 }}
                     >
-                        {loading ? 'Đang đăng ký...' : 'Đăng ký'}
+                        {loading ? 'Registering...' : 'Register'}
                     </Button>
                 </form>
 
                 {/* Divider */}
                 <Box sx={{ my: 2.5 }}>
                     <Divider>
-                        <Typography 
-                            variant="body2" 
+                        <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ px: 1 }}
                         >
-                            Hoặc đăng ký với
+                            Or register with
                         </Typography>
                     </Divider>
                 </Box>
@@ -272,19 +288,18 @@ const Register = () => {
                 {/* Login Link */}
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
-                        Đã có tài khoản?{' '}
-                        <Link
-                            to="/login"
-                            style={{ textDecoration: 'none' }}
-                        >
+                        Already have an account?{' '}
+                        <Link to="/login" style={{ textDecoration: 'none' }}>
                             <Typography
                                 component="span"
                                 variant="body2"
                                 color="primary"
                                 fontWeight="medium"
-                                sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                sx={{
+                                    '&:hover': { textDecoration: 'underline' },
+                                }}
                             >
-                                Đăng nhập
+                                Login
                             </Typography>
                         </Link>
                     </Typography>

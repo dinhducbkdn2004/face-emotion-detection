@@ -45,7 +45,9 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
-    const { loading, error, isAuthenticated } = useSelector((state) => state.auth);
+    const { loading, error, isAuthenticated } = useSelector(
+        (state) => state.auth
+    );
 
     const from = location.state?.from?.pathname || '/dashboard';
 
@@ -100,7 +102,12 @@ const Login = () => {
         }
 
         try {
-            await loginWithEmailAndPassword(email, password, dispatch, rememberMe);
+            await loginWithEmailAndPassword(
+                email,
+                password,
+                dispatch,
+                rememberMe
+            );
         } catch (error) {
             console.error('Đăng nhập thất bại:', error);
         }
@@ -119,25 +126,21 @@ const Login = () => {
     };
 
     return (
-        <Modal
-            open={true}
-            onClose={handleClose}
-            aria-labelledby="login-modal"
-        >
+        <Modal open={true} onClose={handleClose} aria-labelledby="login-modal">
             <Box sx={modalStyle}>
                 {/* Header */}
-                <Box 
+                <Box
                     sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        mb: 3
+                        mb: 3,
                     }}
                 >
                     <Typography variant="h5" fontWeight="bold">
-                        Đăng Nhập
+                        Login
                     </Typography>
-                    <IconButton 
+                    <IconButton
                         onClick={handleClose}
                         size="small"
                         sx={{ color: 'text.secondary' }}
@@ -148,18 +151,16 @@ const Login = () => {
 
                 {/* Error Message */}
                 {error && (
-                    <Box 
-                        sx={{ 
+                    <Box
+                        sx={{
                             mb: 2,
                             p: 1.5,
                             bgcolor: 'error.light',
                             borderRadius: 1,
-                            color: 'error.main'
+                            color: 'error.main',
                         }}
                     >
-                        <Typography variant="body2">
-                            {error}
-                        </Typography>
+                        <Typography variant="body2">{error}</Typography>
                     </Box>
                 )}
 
@@ -180,7 +181,7 @@ const Login = () => {
 
                     <TextField
                         fullWidth
-                        label="Mật khẩu"
+                        label="Password"
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -192,25 +193,27 @@ const Login = () => {
                     />
 
                     {/* Remember Me & Forgot Password */}
-                    <Box 
-                        sx={{ 
+                    <Box
+                        sx={{
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            my: 1
+                            my: 1,
                         }}
                     >
                         <FormControlLabel
                             control={
                                 <Checkbox
                                     checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
+                                    onChange={(e) =>
+                                        setRememberMe(e.target.checked)
+                                    }
                                     size="small"
                                 />
                             }
                             label={
                                 <Typography variant="body2">
-                                    Ghi nhớ đăng nhập
+                                    Remember me
                                 </Typography>
                             }
                         />
@@ -218,12 +221,14 @@ const Login = () => {
                             to="/forgot-password"
                             style={{ textDecoration: 'none' }}
                         >
-                            <Typography 
-                                variant="body2" 
+                            <Typography
+                                variant="body2"
                                 color="primary"
-                                sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                sx={{
+                                    '&:hover': { textDecoration: 'underline' },
+                                }}
                             >
-                                Quên mật khẩu?
+                                Forgot password?
                             </Typography>
                         </Link>
                     </Box>
@@ -236,19 +241,19 @@ const Login = () => {
                         disabled={loading}
                         sx={{ mt: 2, py: 1 }}
                     >
-                        {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                        {loading ? 'Logging in...' : 'Login'}
                     </Button>
                 </form>
 
                 {/* Divider */}
                 <Box sx={{ my: 2.5 }}>
                     <Divider>
-                        <Typography 
-                            variant="body2" 
+                        <Typography
+                            variant="body2"
                             color="text.secondary"
                             sx={{ px: 1 }}
                         >
-                            Hoặc đăng nhập với
+                            Or login with
                         </Typography>
                     </Divider>
                 </Box>
@@ -268,19 +273,18 @@ const Login = () => {
                 {/* Register Link */}
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
-                        Chưa có tài khoản?{' '}
-                        <Link
-                            to="/register"
-                            style={{ textDecoration: 'none' }}
-                        >
+                        Don't have an account?{' '}
+                        <Link to="/register" style={{ textDecoration: 'none' }}>
                             <Typography
                                 component="span"
                                 variant="body2"
                                 color="primary"
                                 fontWeight="medium"
-                                sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                sx={{
+                                    '&:hover': { textDecoration: 'underline' },
+                                }}
                             >
-                                Đăng ký ngay
+                                Register now
                             </Typography>
                         </Link>
                     </Typography>

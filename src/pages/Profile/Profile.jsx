@@ -112,7 +112,10 @@ export default function Profile() {
                                             bottom: 0,
                                             right: 0,
                                             backgroundColor: 'background.paper',
-                                            '&:hover': { backgroundColor: 'background.default' },
+                                            '&:hover': {
+                                                backgroundColor:
+                                                    'background.default',
+                                            },
                                         }}
                                     >
                                         <PhotoCameraIcon />
@@ -120,10 +123,17 @@ export default function Profile() {
                                 </Box>
                             </Grid>
                             <Grid item xs>
-                                <Typography variant="h4" gutterBottom fontWeight="bold">
-                                    {user?.displayName || 'Người dùng'}
+                                <Typography
+                                    variant="h4"
+                                    gutterBottom
+                                    fontWeight="bold"
+                                >
+                                    {user?.displayName || 'User'}
                                 </Typography>
-                                <Typography variant="body1" color="text.secondary">
+                                <Typography
+                                    variant="body1"
+                                    color="text.secondary"
+                                >
                                     {user?.email}
                                 </Typography>
                             </Grid>
@@ -153,9 +163,9 @@ export default function Profile() {
                                 px: 2,
                             }}
                         >
-                            <Tab label="Thông tin cá nhân" />
-                            <Tab label="Bảo mật" />
-                            <Tab label="Thông báo" />
+                            <Tab label="Personal Information" />
+                            <Tab label="Security" />
+                            <Tab label="Notifications" />
                         </Tabs>
 
                         <TabPanel value={tab} index={0}>
@@ -164,9 +174,13 @@ export default function Profile() {
                                     <Button
                                         startIcon={<EditIcon />}
                                         onClick={handleEdit}
-                                        sx={{ position: 'absolute', right: 0, top: 0 }}
+                                        sx={{
+                                            position: 'absolute',
+                                            right: 0,
+                                            top: 0,
+                                        }}
                                     >
-                                        Chỉnh sửa
+                                        Edit
                                     </Button>
                                 )}
 
@@ -175,12 +189,13 @@ export default function Profile() {
                                         <Grid item xs={12} sm={6}>
                                             <TextField
                                                 fullWidth
-                                                label="Họ và tên"
+                                                label="Full Name"
                                                 value={profileData.displayName}
                                                 onChange={(e) =>
                                                     setProfileData({
                                                         ...profileData,
-                                                        displayName: e.target.value,
+                                                        displayName:
+                                                            e.target.value,
                                                     })
                                                 }
                                             />
@@ -196,7 +211,7 @@ export default function Profile() {
                                         <Grid item xs={12} sm={6}>
                                             <TextField
                                                 fullWidth
-                                                label="Số điện thoại"
+                                                label="Phone Number"
                                                 value={profileData.phone}
                                                 onChange={(e) =>
                                                     setProfileData({
@@ -209,7 +224,7 @@ export default function Profile() {
                                         <Grid item xs={12}>
                                             <TextField
                                                 fullWidth
-                                                label="Giới thiệu"
+                                                label="Bio"
                                                 multiline
                                                 rows={4}
                                                 value={profileData.bio}
@@ -222,20 +237,26 @@ export default function Profile() {
                                             />
                                         </Grid>
                                         <Grid item xs={12}>
-                                            <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    gap: 2,
+                                                    justifyContent: 'flex-end',
+                                                }}
+                                            >
                                                 <Button
                                                     variant="outlined"
                                                     startIcon={<CancelIcon />}
                                                     onClick={handleCancel}
                                                 >
-                                                    Hủy
+                                                    Cancel
                                                 </Button>
                                                 <Button
                                                     variant="contained"
                                                     startIcon={<SaveIcon />}
                                                     onClick={handleSave}
                                                 >
-                                                    Lưu thay đổi
+                                                    Save Changes
                                                 </Button>
                                             </Box>
                                         </Grid>
@@ -244,33 +265,50 @@ export default function Profile() {
                                     <Box>
                                         <Grid container spacing={3}>
                                             <Grid item xs={12}>
-                                                <Typography variant="subtitle1" color="text.secondary">
-                                                    Họ và tên
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    color="text.secondary"
+                                                >
+                                                    Full Name
                                                 </Typography>
                                                 <Typography variant="body1">
-                                                    {profileData.displayName || 'Chưa cập nhật'}
+                                                    {profileData.displayName ||
+                                                        'Not updated'}
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={12}>
-                                                <Typography variant="subtitle1" color="text.secondary">
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    color="text.secondary"
+                                                >
                                                     Email
                                                 </Typography>
-                                                <Typography variant="body1">{profileData.email}</Typography>
-                                            </Grid>
-                                            <Grid item xs={12}>
-                                                <Typography variant="subtitle1" color="text.secondary">
-                                                    Số điện thoại
-                                                </Typography>
                                                 <Typography variant="body1">
-                                                    {profileData.phone || 'Chưa cập nhật'}
+                                                    {profileData.email}
                                                 </Typography>
                                             </Grid>
                                             <Grid item xs={12}>
-                                                <Typography variant="subtitle1" color="text.secondary">
-                                                    Giới thiệu
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    color="text.secondary"
+                                                >
+                                                    Phone Number
                                                 </Typography>
                                                 <Typography variant="body1">
-                                                    {profileData.bio || 'Chưa cập nhật'}
+                                                    {profileData.phone ||
+                                                        'Not updated'}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item xs={12}>
+                                                <Typography
+                                                    variant="subtitle1"
+                                                    color="text.secondary"
+                                                >
+                                                    Bio
+                                                </Typography>
+                                                <Typography variant="body1">
+                                                    {profileData.bio ||
+                                                        'Not updated'}
                                                 </Typography>
                                             </Grid>
                                         </Grid>
@@ -281,25 +319,25 @@ export default function Profile() {
 
                         <TabPanel value={tab} index={1}>
                             <Typography variant="h6" gutterBottom>
-                                Bảo mật tài khoản
+                                Account Security
                             </Typography>
                             <Box sx={{ mb: 3 }}>
                                 <Button variant="outlined" color="primary">
-                                    Đổi mật khẩu
+                                    Change Password
                                 </Button>
                             </Box>
                             <Divider sx={{ my: 3 }} />
                             <Typography variant="h6" gutterBottom>
-                                Xác thực hai yếu tố
+                                Two-Factor Authentication
                             </Typography>
                             <Button variant="outlined" color="primary">
-                                Thiết lập xác thực hai yếu tố
+                                Setup Two-Factor Authentication
                             </Button>
                         </TabPanel>
 
                         <TabPanel value={tab} index={2}>
                             <Typography variant="h6" gutterBottom>
-                                Cài đặt thông báo
+                                Notification Settings
                             </Typography>
                             {/* Add notification settings here */}
                         </TabPanel>

@@ -33,69 +33,70 @@ const MotionPaper = motion.create(Paper);
 
 const settingsSections = [
     {
-        title: 'Giao diện',
+        title: 'Interface',
         items: [
             {
                 icon: <PaletteIcon />,
-                title: 'Giao diện tối',
-                description: 'Bật/tắt chế độ tối',
+                title: 'Dark Mode',
+                description: 'Toggle dark mode on/off',
                 type: 'switch',
             },
         ],
     },
     {
-        title: 'Thông báo',
+        title: 'Notifications',
         items: [
             {
                 icon: <NotificationsIcon />,
-                title: 'Thông báo ứng dụng',
-                description: 'Nhận thông báo từ ứng dụng',
+                title: 'App Notifications',
+                description: 'Receive notifications from the app',
                 type: 'switch',
             },
             {
                 icon: <SmartphoneIcon />,
-                title: 'Thông báo qua email',
-                description: 'Nhận thông báo qua email',
+                title: 'Email Notifications',
+                description: 'Receive notifications via email',
                 type: 'switch',
             },
         ],
     },
     {
-        title: 'Ngôn ngữ & Khu vực',
+        title: 'Language & Region',
         items: [
             {
                 icon: <LanguageIcon />,
-                title: 'Ngôn ngữ',
-                description: 'Chọn ngôn ngữ hiển thị',
+                title: 'Language',
+                description: 'Select display language',
                 type: 'select',
                 options: [
-                    { value: 'vi', label: 'Tiếng Việt' },
                     { value: 'en', label: 'English' },
+                    { value: 'vi', label: 'Vietnamese' },
                 ],
             },
         ],
     },
     {
-        title: 'Bảo mật',
+        title: 'Security',
         items: [
             {
                 icon: <SecurityIcon />,
-                title: 'Xác thực hai yếu tố',
-                description: 'Bảo mật tài khoản với xác thực hai yếu tố',
+                title: 'Two-Factor Authentication',
+                description:
+                    'Secure your account with two-factor authentication',
                 type: 'button',
-                buttonText: 'Thiết lập',
+                buttonText: 'Setup',
             },
         ],
     },
     {
-        title: 'Dữ liệu',
+        title: 'Data',
         items: [
             {
                 icon: <StorageIcon />,
-                title: 'Xóa dữ liệu',
-                description: 'Xóa tất cả dữ liệu cá nhân',
+                title: 'Delete Data',
+                description: 'Delete all personal data',
                 type: 'button',
-                buttonText: 'Xóa dữ liệu',
+                buttonText: 'Delete Data',
                 buttonColor: 'error',
             },
         ],
@@ -108,13 +109,13 @@ export default function Settings() {
         darkMode: theme.palette.mode === 'dark',
         appNotifications: true,
         emailNotifications: true,
-        language: 'vi',
+        language: 'en',
     });
 
     const handleSettingChange = (setting, value) => {
-        setSettings(prev => ({
+        setSettings((prev) => ({
             ...prev,
-            [setting]: value
+            [setting]: value,
         }));
     };
 
@@ -123,9 +124,9 @@ export default function Settings() {
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.1
-            }
-        }
+                staggerChildren: 0.1,
+            },
+        },
     };
 
     const itemVariants = {
@@ -134,9 +135,9 @@ export default function Settings() {
             opacity: 1,
             y: 0,
             transition: {
-                duration: 0.5
-            }
-        }
+                duration: 0.5,
+            },
+        },
     };
 
     return (
@@ -146,8 +147,13 @@ export default function Settings() {
                 initial="hidden"
                 animate="visible"
             >
-                <Typography variant="h4" gutterBottom fontWeight="bold" sx={{ mb: 4 }}>
-                    Cài đặt
+                <Typography
+                    variant="h4"
+                    gutterBottom
+                    fontWeight="bold"
+                    sx={{ mb: 4 }}
+                >
+                    Settings
                 </Typography>
 
                 {settingsSections.map((section, sectionIndex) => (
@@ -163,7 +169,9 @@ export default function Settings() {
                             overflow: 'hidden',
                         }}
                     >
-                        <Box sx={{ px: 3, py: 2, bgcolor: 'background.default' }}>
+                        <Box
+                            sx={{ px: 3, py: 2, bgcolor: 'background.default' }}
+                        >
                             <Typography variant="h6" fontWeight="medium">
                                 {section.title}
                             </Typography>
@@ -176,9 +184,10 @@ export default function Settings() {
                                     sx={{
                                         py: 2,
                                         '&:hover': {
-                                            bgcolor: theme.palette.mode === 'dark'
-                                                ? 'rgba(255, 255, 255, 0.05)'
-                                                : 'rgba(0, 0, 0, 0.02)',
+                                            bgcolor:
+                                                theme.palette.mode === 'dark'
+                                                    ? 'rgba(255, 255, 255, 0.05)'
+                                                    : 'rgba(0, 0, 0, 0.02)',
                                         },
                                     }}
                                 >
@@ -194,35 +203,61 @@ export default function Settings() {
                                         {item.type === 'switch' && (
                                             <Switch
                                                 edge="end"
-                                                checked={settings[Object.keys(settings)[itemIndex]]}
+                                                checked={
+                                                    settings[
+                                                        Object.keys(settings)[
+                                                            itemIndex
+                                                        ]
+                                                    ]
+                                                }
                                                 onChange={(e) =>
                                                     handleSettingChange(
-                                                        Object.keys(settings)[itemIndex],
+                                                        Object.keys(settings)[
+                                                            itemIndex
+                                                        ],
                                                         e.target.checked
                                                     )
                                                 }
                                             />
                                         )}
                                         {item.type === 'select' && (
-                                            <FormControl size="small" sx={{ minWidth: 120 }}>
+                                            <FormControl
+                                                size="small"
+                                                sx={{ minWidth: 120 }}
+                                            >
                                                 <Select
                                                     value={settings.language}
                                                     onChange={(e) =>
-                                                        handleSettingChange('language', e.target.value)
+                                                        handleSettingChange(
+                                                            'language',
+                                                            e.target.value
+                                                        )
                                                     }
                                                 >
-                                                    {item.options.map((option) => (
-                                                        <MenuItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </MenuItem>
-                                                    ))}
+                                                    {item.options.map(
+                                                        (option) => (
+                                                            <MenuItem
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {option.label}
+                                                            </MenuItem>
+                                                        )
+                                                    )}
                                                 </Select>
                                             </FormControl>
                                         )}
                                         {item.type === 'button' && (
                                             <Button
                                                 variant="outlined"
-                                                color={item.buttonColor || 'primary'}
+                                                color={
+                                                    item.buttonColor ||
+                                                    'primary'
+                                                }
                                                 size="small"
                                             >
                                                 {item.buttonText}

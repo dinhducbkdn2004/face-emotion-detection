@@ -37,7 +37,7 @@ const ForgotPassword = () => {
         setError('');
 
         if (!email.trim()) {
-            setError('Email là bắt buộc');
+            setError('Email is required');
             return;
         }
 
@@ -47,8 +47,8 @@ const ForgotPassword = () => {
             setSuccess(true);
             setEmail('');
         } catch (error) {
-            console.error('Lỗi khi gửi email khôi phục:', error);
-            setError('Không thể gửi email khôi phục. Vui lòng thử lại sau.');
+            console.error('Error sending recovery email:', error);
+            setError('Unable to send recovery email. Please try again later.');
         } finally {
             setLoading(false);
         }
@@ -66,18 +66,18 @@ const ForgotPassword = () => {
         >
             <Box sx={modalStyle}>
                 {/* Header */}
-                <Box 
+                <Box
                     sx={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        mb: 3
+                        mb: 3,
                     }}
                 >
                     <Typography variant="h5" fontWeight="bold">
-                        Quên mật khẩu
+                        Forgot Password
                     </Typography>
-                    <IconButton 
+                    <IconButton
                         onClick={handleClose}
                         size="small"
                         sx={{ color: 'text.secondary' }}
@@ -92,20 +92,20 @@ const ForgotPassword = () => {
                     color="text.secondary"
                     sx={{ mb: 2 }}
                 >
-                    {window.location.search.includes('expired') ?
-                        'Liên kết đặt lại mật khẩu của bạn đã hết hạn hoặc đã được sử dụng. Vui lòng yêu cầu một liên kết mới.' :
-                        'Nhập địa chỉ email của bạn, chúng tôi sẽ gửi hướng dẫn để đặt lại mật khẩu.'}
+                    {window.location.search.includes('expired')
+                        ? 'Your password reset link has expired or has been used. Please request a new link.'
+                        : 'Enter your email address and we will send instructions to reset your password.'}
                 </Typography>
 
                 {/* Error Message */}
                 {error && (
-                    <Box 
-                        sx={{ 
+                    <Box
+                        sx={{
                             mb: 2,
                             p: 1.5,
                             bgcolor: 'error.light',
                             borderRadius: 1,
-                            color: 'error.main'
+                            color: 'error.main',
                         }}
                     >
                         <Typography variant="body2">{error}</Typography>
@@ -115,19 +115,19 @@ const ForgotPassword = () => {
                 {success ? (
                     // Success State
                     <Box sx={{ textAlign: 'center', py: 2 }}>
-                        <Typography 
-                            color="success.main" 
+                        <Typography
+                            color="success.main"
                             sx={{ mb: 2 }}
                             variant="body1"
                         >
-                            Email khôi phục mật khẩu đã được gửi!
+                            Password recovery email has been sent!
                         </Typography>
-                        <Typography 
-                            color="text.secondary" 
+                        <Typography
+                            color="text.secondary"
                             sx={{ mb: 3 }}
                             variant="body2"
                         >
-                            Vui lòng kiểm tra hộp thư của bạn và làm theo hướng dẫn.
+                            Please check your inbox and follow the instructions.
                         </Typography>
                         <Button
                             component={Link}
@@ -136,7 +136,7 @@ const ForgotPassword = () => {
                             fullWidth
                             sx={{ py: 1 }}
                         >
-                            Quay lại đăng nhập
+                            Return to Login
                         </Button>
                     </Box>
                 ) : (
@@ -161,7 +161,11 @@ const ForgotPassword = () => {
                             disabled={loading}
                             sx={{ mt: 3, mb: 2, py: 1 }}
                         >
-                            {loading ? 'Đang gửi...' : window.location.search.includes('expired') ? 'Gửi liên kết mới' : 'Gửi email khôi phục'}
+                            {loading
+                                ? 'Sending...'
+                                : window.location.search.includes('expired')
+                                  ? 'Send New Link'
+                                  : 'Send Recovery Email'}
                         </Button>
 
                         <Box sx={{ textAlign: 'center' }}>
@@ -172,9 +176,13 @@ const ForgotPassword = () => {
                                 <Typography
                                     variant="body2"
                                     color="primary"
-                                    sx={{ '&:hover': { textDecoration: 'underline' } }}
+                                    sx={{
+                                        '&:hover': {
+                                            textDecoration: 'underline',
+                                        },
+                                    }}
                                 >
-                                    Quay lại đăng nhập
+                                    Back to Login
                                 </Typography>
                             </Link>
                         </Box>
