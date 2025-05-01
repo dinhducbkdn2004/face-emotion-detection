@@ -17,6 +17,7 @@
     "@mui/material": "^7.0.1",
     "@reduxjs/toolkit": "^2.6.1",
     "@toolpad/core": "^0.13.0",
+    "axios": "^1.9.0",
     "firebase": "^11.5.0",
     "framer-motion": "^12.6.3",
     "gsap": "^3.12.7",

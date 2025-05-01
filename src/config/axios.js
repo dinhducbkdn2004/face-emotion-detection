@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Tạo instance axios với config mặc định
 const axiosInstance = axios.create({
-    baseURL: process.env.VITE_API_URL,
+    baseURL: import.meta.env.VITE_API_URL,
     timeout: 5000,
     headers: {
         'Content-Type': 'application/json',
