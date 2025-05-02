@@ -8,7 +8,7 @@ API Emotion Detection cung cấp các endpoint để:
 - Phát hiện cảm xúc từ hình ảnh khuôn mặt
 - Quản lý lịch sử phát hiện cảm xúc
 
-> Base URL: `https://ped.ldblckrs.id.vn` (Backend server deployed on Azure VM) # currently down
+> Base URL: `https://ped.ldblckrs.id.vn` 
 
 ## Xác thực (Authentication)
 

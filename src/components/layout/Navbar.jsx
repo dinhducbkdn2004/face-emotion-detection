@@ -28,6 +28,7 @@ import {
     Login as LoginIcon,
     Logout as LogoutIcon,
     AppRegistration as RegisterIcon,
+    History as HistoryIcon,
 } from '@mui/icons-material';
 import { useUser } from '../account/UserContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -63,6 +64,12 @@ const Navbar = () => {
             name: 'Dashboard',
             path: '/dashboard',
             icon: <DashboardIcon />,
+            requiredAuth: true,
+        },
+        {
+            name: 'History',
+            path: '/history',
+            icon: <HistoryIcon />,
             requiredAuth: true,
         },
     ];

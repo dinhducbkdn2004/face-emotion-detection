@@ -1,13 +1,32 @@
 import React from 'react';
+import { Container, Typography, Box, Paper } from '@mui/material';
+import EmotionDetector from '../../components/EmotionDetector';
 
 const Dashboard = () => {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-            <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
-            <p className="mt-4 text-lg text-gray-600">
-                Welcome to the Dashboard!
-            </p>
-        </div>
+        <Container maxWidth="lg">
+            <Box sx={{ py: 4 }}>
+                <Typography
+                    variant="h4"
+                    fontWeight="bold"
+                    mb={4}
+                    textAlign="center"
+                >
+                    Dashboard
+                </Typography>
+
+                <Paper
+                    elevation={0}
+                    sx={{
+                        p: { xs: 2, md: 3 },
+                        borderRadius: 3,
+                        bgcolor: 'transparent',
+                    }}
+                >
+                    <EmotionDetector />
+                </Paper>
+            </Box>
+        </Container>
     );
 };
 
