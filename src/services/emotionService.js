@@ -210,6 +210,15 @@ export const getEmotionDetail = async (detectionId) => {
 };
 
 /**
+ * Lấy chi tiết một lần phát hiện cảm xúc theo ID
+ * @param {string} detectionId - ID của lần phát hiện
+ * @returns {Promise<Object>} Chi tiết kết quả phát hiện
+ */
+export const getEmotionDetectionById = async (detectionId) => {
+    return getEmotionDetail(detectionId);
+};
+
+/**
  * Xóa một lần phát hiện cảm xúc
  * @param {string} detectionId - ID của lần phát hiện
  * @returns {Promise<void>}

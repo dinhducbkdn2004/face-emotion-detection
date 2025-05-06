@@ -11,6 +11,7 @@ import About from './pages/About/About';
 import Profile from './pages/Profile/Profile';
 import Settings from './pages/Settings/Settings';
 import History from './pages/History/History';
+import HistoryDetail from './pages/History/HistoryDetail';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -95,6 +96,14 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <History />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/history/:id"
+                        element={
+                            <ProtectedRoute>
+                                <HistoryDetail />
                             </ProtectedRoute>
                         }
                     />

@@ -1,6 +1,12 @@
+import React from 'react';
 import { ToastContainer } from 'react-toastify';
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material';
 
+/**
+ * Component wrapper cho ToastContainer với cấu hình phù hợp với theme
+ * @param {Object} props - Props của component
+ * @param {React.ReactNode} props.children - Các component con
+ */
 const ToastWrapper = ({ children }) => {
     const theme = useTheme();
     const isDarkMode = theme.palette.mode === 'dark';
@@ -8,21 +14,19 @@ const ToastWrapper = ({ children }) => {
     return (
         <>
             {children}
+
             <ToastContainer
-                position="bottom-left"
-                theme={isDarkMode ? 'dark' : 'light'}
+                position="top-right"
                 autoClose={3000}
                 hideProgressBar={false}
-                newestOnTop={false}
+                newestOnTop
                 closeOnClick
                 rtl={false}
                 pauseOnFocusLoss
                 draggable
                 pauseOnHover
-                toastStyle={{
-                    backgroundColor: theme.palette.background.paper,
-                    color: theme.palette.text.primary,
-                }}
+                theme={isDarkMode ? 'dark' : 'light'}
+                style={{ zIndex: theme.zIndex.snackbar }}
             />
         </>
     );

@@ -18,8 +18,6 @@ import {
 } from '@mui/material';
 import {
     Menu as MenuIcon,
-    LightMode,
-    DarkMode,
     Dashboard as DashboardIcon,
     Home as HomeIcon,
     Info as InfoIcon,
@@ -31,12 +29,12 @@ import {
     History as HistoryIcon,
 } from '@mui/icons-material';
 import { useUser } from '../account/UserContext';
-import { useTheme } from '../theme/ThemeContext';
+import { useThemeContext } from '../theme/ThemeContext';
 import Account from '../account/Account';
+import ThemeToggle from './ThemeToggle';
 
 const Navbar = () => {
     const { isAuthenticated, signOut } = useUser();
-    const { isDarkMode, toggleTheme } = useTheme();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
 
@@ -240,49 +238,19 @@ const Navbar = () => {
                             ml: { xs: 'auto', sm: 0 }, // Đẩy sang phải trên mobile
                         }}
                     >
-                        {/* Nút chuyển đổi theme - hiển thị trên cả mobile và desktop */}
-                        <Tooltip
-                            title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
-                        >
-                            <IconButton
-                                onClick={toggleTheme}
-                                color="inherit"
-                                sx={{
-                                    p: { xs: 1, sm: 1.2 },
-                                    transition: 'transform 0.3s ease',
-                                    '&:hover': {
-                                        transform: 'rotate(30deg)',
-                                        backgroundColor: (theme) =>
-                                            theme.palette.mode === 'light'
-                                                ? 'rgba(0, 0, 0, 0.04)'
-                                                : 'rgba(255, 255, 255, 0.08)',
-                                    },
-                                }}
-                            >
-                                {isDarkMode ? <LightMode /> : <DarkMode />}
-                            </IconButton>
-                        </Tooltip>
+                        {/* Nút chuyển đổi theme */}
+                        <ThemeToggle />
 
-                        {/* Account component - chỉ hiển thị trên màn hình lớn */}
-                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                            <Account />
-                        </Box>
+                        {/* Tài khoản người dùng */}
+                        <Account />
 
-                        {/* Menu button - chỉ hiển thị trên mobile */}
+                        {/* Nút menu trên mobile */}
                         <IconButton
                             color="inherit"
-                            sx={{
-                                display: { sm: 'none' },
-                                p: 1,
-                                '&:hover': {
-                                    backgroundColor: (theme) =>
-                                        theme.palette.mode === 'light'
-                                            ? 'rgba(0, 0, 0, 0.04)'
-                                            : 'rgba(255, 255, 255, 0.08)',
-                                },
-                            }}
-                            aria-label="menu"
+                            aria-label="open drawer"
+                            edge="end"
                             onClick={toggleMobileMenu}
+                            sx={{ display: { sm: 'none' } }}
                         >
                             <MenuIcon />
                         </IconButton>
@@ -290,92 +258,97 @@ const Navbar = () => {
                 </Toolbar>
             </AppBar>
 
-            {/* Mobile Menu Drawer */}
+            {/* Menu trên mobile */}
             <Drawer
                 anchor="right"
                 open={mobileMenuOpen}
-                onClose={toggleMobileMenu}
+                onClose={handleMenuClose}
                 sx={{
                     '& .MuiDrawer-paper': {
-                        width: '70%',
-                        maxWidth: 300,
-                        borderTopLeftRadius: 12,
-                        borderBottomLeftRadius: 12,
-                        pt: 2,
+                        width: 260,
+                        mt: 7, // Space for AppBar
+                        bgcolor: 'background.paper',
                     },
                 }}
             >
-                <Box
-                    sx={{
-                        p: 2,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        height: '100%',
-                    }}
-                >
-                    <List sx={{ flexGrow: 1 }}>
-                        {navItems.map((item) => {
-                            if (item.requiredAuth && !isAuthenticated)
-                                return null;
+                <List sx={{ pt: 2 }}>
+                    {/* Danh sách menu chính */}
+                    {navItems.map((item) => {
+                        if (item.requiredAuth && !isAuthenticated) return null;
 
-                            return (
-                                <ListItem key={item.path} disablePadding>
-                                    <ListItemButton
-                                        component={Link}
-                                        to={item.path}
-                                        selected={isActive(item.path)}
-                                        onClick={handleMenuClose}
+                        return (
+                            <ListItem key={item.path} disablePadding>
+                                <ListItemButton
+                                    component={Link}
+                                    to={item.path}
+                                    selected={isActive(item.path)}
+                                    onClick={handleMenuClose}
+                                    sx={{
+                                        borderRadius: 2,
+                                        mx: 1,
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    <ListItemIcon
                                         sx={{
-                                            borderRadius: 2,
-                                            mb: 0.5,
-                                            '&.Mui-selected': {
-                                                bgcolor: 'action.selected',
-                                            },
-                                        }}
-                                    >
-                                        <ListItemIcon>{item.icon}</ListItemIcon>
-                                        <ListItemText primary={item.name} />
-                                    </ListItemButton>
-                                </ListItem>
-                            );
-                        })}
-                    </List>
-
-                    <Divider sx={{ my: 2 }} />
-
-                    <List>
-                        {accountItems.map((item, index) => (
-                            <Box key={item.name}>
-                                {item.divider && <Divider sx={{ my: 1 }} />}
-                                <ListItem disablePadding>
-                                    <ListItemButton
-                                        component={Link}
-                                        to={item.path}
-                                        onClick={item.onClick}
-                                        sx={{
-                                            borderRadius: 2,
-                                            mb: 0.5,
-                                            bgcolor: item.highlight
+                                            color: isActive(item.path)
                                                 ? 'primary.main'
-                                                : 'transparent',
-                                            color: item.highlight
-                                                ? 'white'
                                                 : 'inherit',
-                                            '&:hover': {
-                                                bgcolor: item.highlight
-                                                    ? 'primary.dark'
-                                                    : 'action.hover',
-                                            },
+                                            minWidth: 40,
                                         }}
                                     >
-                                        <ListItemIcon>{item.icon}</ListItemIcon>
-                                        <ListItemText primary={item.name} />
-                                    </ListItemButton>
-                                </ListItem>
-                            </Box>
-                        ))}
-                    </List>
-                </Box>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.name} />
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
+
+                    <Divider sx={{ my: 1 }} />
+
+                    {/* Danh sách menu tài khoản */}
+                    {accountItems.map((item) => (
+                        <div key={item.name}>
+                            {item.divider && <Divider sx={{ my: 1 }} />}
+                            <ListItem disablePadding>
+                                <ListItemButton
+                                    component={Link}
+                                    to={item.path}
+                                    onClick={item.onClick || handleMenuClose}
+                                    sx={{
+                                        borderRadius: 2,
+                                        mx: 1,
+                                        mb: 0.5,
+                                        bgcolor: item.highlight
+                                            ? 'primary.main'
+                                            : 'transparent',
+                                        color: item.highlight
+                                            ? 'primary.contrastText'
+                                            : 'inherit',
+                                        '&:hover': {
+                                            bgcolor: item.highlight
+                                                ? 'primary.dark'
+                                                : undefined,
+                                        },
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{
+                                            color: item.highlight
+                                                ? 'primary.contrastText'
+                                                : undefined,
+                                            minWidth: 40,
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.name} />
+                                </ListItemButton>
+                            </ListItem>
+                        </div>
+                    ))}
+                </List>
             </Drawer>
         </>
     );

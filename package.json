@@ -14,6 +14,7 @@
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.2.5",
     "@mui/icons-material": "^7.0.1",
+    "@mui/lab": "^7.0.0-beta.11",
     "@mui/material": "^7.0.1",
     "@reduxjs/toolkit": "^2.6.1",
     "@toolpad/core": "^0.13.0",
@@ -24,6 +25,7 @@
     "gsap": "^3.12.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.4.0",
     "react-toastify": "^11.0.5"

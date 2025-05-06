@@ -77,15 +77,101 @@ export const showToast = (message, type = ToastType.INFO, options = {}) => {
     }
 };
 
-// Xuất đối tượng service với tất cả các phương thức
-const ToastService = {
-    success: showSuccess,
-    error: showError,
-    warning: showWarning,
-    info: showInfo,
-    show: showToast,
-    dismiss: toast.dismiss, // Ẩn toast
-    isActive: toast.isActive, // Kiểm tra toast có đang hiển thị
-};
+/**
+ * Dịch vụ quản lý các thông báo toast toàn cục
+ */
+class ToastService {
+    /**
+     * Hiển thị thông báo thành công
+     * @param {string} message - Nội dung thông báo
+     * @param {object} options - Tùy chọn thêm
+     */
+    static success(message, options = {}) {
+        toast.success(message, {
+            position: 'top-right',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            ...options,
+        });
+    }
+
+    /**
+     * Hiển thị thông báo lỗi
+     * @param {string} message - Nội dung thông báo
+     * @param {object} options - Tùy chọn thêm
+     */
+    static error(message, options = {}) {
+        toast.error(message, {
+            position: 'top-right',
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            ...options,
+        });
+    }
+
+    /**
+     * Hiển thị thông báo cảnh báo
+     * @param {string} message - Nội dung thông báo
+     * @param {object} options - Tùy chọn thêm
+     */
+    static warning(message, options = {}) {
+        toast.warning(message, {
+            position: 'top-right',
+            autoClose: 4000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            ...options,
+        });
+    }
+
+    /**
+     * Hiển thị thông báo thông tin
+     * @param {string} message - Nội dung thông báo
+     * @param {object} options - Tùy chọn thêm
+     */
+    static info(message, options = {}) {
+        toast.info(message, {
+            position: 'top-right',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            ...options,
+        });
+    }
+
+    /**
+     * Hiển thị thông báo tùy chỉnh
+     * @param {string} message - Nội dung thông báo
+     * @param {object} options - Tùy chọn thêm
+     */
+    static custom(message, options = {}) {
+        toast(message, {
+            position: 'top-right',
+            autoClose: 3000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            ...options,
+        });
+    }
+
+    /**
+     * Đóng tất cả thông báo đang hiển thị
+     */
+    static dismiss() {
+        toast.dismiss();
+    }
+}
 
 export default ToastService;
