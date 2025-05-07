@@ -1,6 +1,6 @@
 import { toast } from 'react-toastify';
 
-// Kiểu toast
+// Toast types
 export const ToastType = {
     SUCCESS: 'success',
     ERROR: 'error',
@@ -8,7 +8,7 @@ export const ToastType = {
     INFO: 'info',
 };
 
-// Tùy chọn mặc định
+// Default options
 const defaultOptions = {
     autoClose: 3000,
     hideProgressBar: false,
@@ -18,46 +18,46 @@ const defaultOptions = {
 };
 
 /**
- * Hiển thị toast thành công
- * @param {string} message - Nội dung thông báo
- * @param {object} options - Tùy chọn cho toast
+ * Display a success toast
+ * @param {string} message - Message content
+ * @param {object} options - Toast options
  */
 export const showSuccess = (message, options = {}) => {
     toast.success(message, { ...defaultOptions, ...options });
 };
 
 /**
- * Hiển thị toast lỗi
- * @param {string} message - Nội dung thông báo
- * @param {object} options - Tùy chọn cho toast
+ * Display an error toast
+ * @param {string} message - Message content
+ * @param {object} options - Toast options
  */
 export const showError = (message, options = {}) => {
     toast.error(message, { ...defaultOptions, ...options });
 };
 
 /**
- * Hiển thị toast cảnh báo
- * @param {string} message - Nội dung thông báo
- * @param {object} options - Tùy chọn cho toast
+ * Display a warning toast
+ * @param {string} message - Message content
+ * @param {object} options - Toast options
  */
 export const showWarning = (message, options = {}) => {
     toast.warning(message, { ...defaultOptions, ...options });
 };
 
 /**
- * Hiển thị toast thông tin
- * @param {string} message - Nội dung thông báo
- * @param {object} options - Tùy chọn cho toast
+ * Display an info toast
+ * @param {string} message - Message content
+ * @param {object} options - Toast options
  */
 export const showInfo = (message, options = {}) => {
     toast.info(message, { ...defaultOptions, ...options });
 };
 
 /**
- * Hiển thị toast tùy chỉnh
- * @param {string} message - Nội dung thông báo
- * @param {string} type - Kiểu toast (success, error, warning, info)
- * @param {object} options - Tùy chọn cho toast
+ * Display a custom toast
+ * @param {string} message - Message content
+ * @param {string} type - Toast type (success, error, warning, info)
+ * @param {object} options - Toast options
  */
 export const showToast = (message, type = ToastType.INFO, options = {}) => {
     switch (type) {
@@ -78,13 +78,13 @@ export const showToast = (message, type = ToastType.INFO, options = {}) => {
 };
 
 /**
- * Dịch vụ quản lý các thông báo toast toàn cục
+ * Global toast notification service
  */
 class ToastService {
     /**
-     * Hiển thị thông báo thành công
-     * @param {string} message - Nội dung thông báo
-     * @param {object} options - Tùy chọn thêm
+     * Display a success toast
+     * @param {string} message - Message content
+     * @param {object} options - Additional options
      */
     static success(message, options = {}) {
         toast.success(message, {
@@ -99,9 +99,9 @@ class ToastService {
     }
 
     /**
-     * Hiển thị thông báo lỗi
-     * @param {string} message - Nội dung thông báo
-     * @param {object} options - Tùy chọn thêm
+     * Display an error toast
+     * @param {string} message - Message content
+     * @param {object} options - Additional options
      */
     static error(message, options = {}) {
         toast.error(message, {
@@ -116,9 +116,9 @@ class ToastService {
     }
 
     /**
-     * Hiển thị thông báo cảnh báo
-     * @param {string} message - Nội dung thông báo
-     * @param {object} options - Tùy chọn thêm
+     * Display a warning toast
+     * @param {string} message - Message content
+     * @param {object} options - Additional options
      */
     static warning(message, options = {}) {
         toast.warning(message, {
@@ -133,9 +133,9 @@ class ToastService {
     }
 
     /**
-     * Hiển thị thông báo thông tin
-     * @param {string} message - Nội dung thông báo
-     * @param {object} options - Tùy chọn thêm
+     * Display an info toast
+     * @param {string} message - Message content
+     * @param {object} options - Additional options
      */
     static info(message, options = {}) {
         toast.info(message, {
@@ -150,9 +150,9 @@ class ToastService {
     }
 
     /**
-     * Hiển thị thông báo tùy chỉnh
-     * @param {string} message - Nội dung thông báo
-     * @param {object} options - Tùy chọn thêm
+     * Display a custom toast
+     * @param {string} message - Message content
+     * @param {object} options - Additional options
      */
     static custom(message, options = {}) {
         toast(message, {
@@ -167,7 +167,7 @@ class ToastService {
     }
 
     /**
-     * Đóng tất cả thông báo đang hiển thị
+     * Dismiss all currently displayed toasts
      */
     static dismiss() {
         toast.dismiss();

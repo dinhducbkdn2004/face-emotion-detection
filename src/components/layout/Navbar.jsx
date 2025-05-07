@@ -130,14 +130,15 @@ const Navbar = () => {
                             ? 'rgba(255, 255, 255, 0.8)'
                             : 'rgba(18, 18, 18, 0.8)',
                     backdropFilter: 'blur(8px)',
-                    color: (theme) =>
-                        theme.palette.mode === 'light'
-                            ? 'text.primary'
-                            : 'text.primary',
+                    color: 'text.primary',
                     borderBottom: 1,
                     borderColor: 'divider',
                     transition: 'all 0.3s ease-in-out',
                     zIndex: 1200,
+                    boxShadow: (theme) =>
+                        theme.palette.mode === 'light'
+                            ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                            : '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.12)',
                 }}
             >
                 <Toolbar
@@ -171,7 +172,7 @@ const Navbar = () => {
                                 },
                             }}
                         >
-                            Emotion Detect
+                            Emotion Detection
                         </Badge>
                     </Link>
 

@@ -10,7 +10,7 @@ export const detectEmotion = async (imageFile) => {
     try {
         const formData = new FormData();
         formData.append('file', imageFile);
-        
+
         // Thêm guestId vào URL nếu người dùng là khách
         const guestId = localStorage.getItem('guestId');
         let url = '/api/detect';
@@ -23,7 +23,7 @@ export const detectEmotion = async (imageFile) => {
                 'Content-Type': 'multipart/form-data',
             },
         });
-        
+
         // Lưu guestId mới nếu có
         if (response.data && response.data.guest_id) {
             localStorage.setItem('guestId', response.data.guest_id);
@@ -57,10 +57,19 @@ export const detectEmotion = async (imageFile) => {
 export const detectEmotionBatch = async (imageFiles, onProgress) => {
     try {
         const formData = new FormData();
-        imageFiles.forEach((file) => {
-            formData.append('files', file);
-        });
         
+        // Tạo map để lưu trữ tên file theo ID
+        const fileNameMap = {};
+        
+        imageFiles.forEach((file, index) => {
+            formData.append('files', file);
+            // Thêm tên file để dễ dàng mapping kết quả
+            formData.append('filenames', file.name);
+            
+            // Lưu tên file theo index để mapping sau này
+            fileNameMap[index] = file.name;
+        });
+
         // Thêm guestId vào URL nếu người dùng là khách
         const guestId = localStorage.getItem('guestId');
         let url = `${apiClient.defaults.baseURL}/api/detect/batch`;
@@ -75,21 +84,26 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
+        // Sử dụng fetch API để xử lý SSE
         const response = await fetch(url, {
             method: 'POST',
             body: formData,
             headers: headers,
-            // Không sử dụng credentials 'include' vì we đã tắt withCredentials
         });
 
         if (!response.ok) {
-            throw new Error(`Lỗi HTTP: ${response.status}`);
+            // Xử lý lỗi HTTP
+            const errorText = await response.text();
+            throw new Error(
+                `Lỗi HTTP ${response.status}: ${errorText || response.statusText}`
+            );
         }
 
         // Xử lý SSE (Server-Sent Events)
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let processedCount = 0;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -105,24 +119,107 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
                 if (line.startsWith('data: ')) {
                     try {
                         const jsonData = JSON.parse(line.slice(6));
-                        
+                        console.log('Nhận dữ liệu SSE:', jsonData);
+
                         // Lưu guestId mới nếu có
                         if (jsonData && jsonData.guest_id) {
                             localStorage.setItem('guestId', jsonData.guest_id);
                         }
                         
-                        onProgress(jsonData);
+                        // Thêm filename vào kết quả nếu chưa có
+                        if (!jsonData.filename && jsonData.detection_results) {
+                            // Dùng index hoặc detection_id để mapping tên file
+                            if (processedCount < imageFiles.length) {
+                                jsonData.filename = fileNameMap[processedCount] || imageFiles[processedCount].name;
+                                processedCount++;
+                            }
+                        }
+
+                        // Gọi callback với dữ liệu nhận được
+                        if (onProgress && typeof onProgress === 'function') {
+                            onProgress(jsonData);
+                        }
                     } catch (e) {
-                        console.error('Lỗi parsing SSE data:', e);
+                        console.error(
+                            'Lỗi parsing SSE data:',
+                            e,
+                            line.slice(6)
+                        );
+                        // Thông báo lỗi parsing nếu cần
+                        if (onProgress && typeof onProgress === 'function') {
+                            onProgress({
+                                error: 'Lỗi xử lý dữ liệu từ server',
+                                filename: 'Không xác định',
+                                status: 'error',
+                            });
+                        }
                     }
                 }
             }
         }
     } catch (error) {
         console.error('Lỗi phát hiện cảm xúc batch:', error);
+
+        // Hiển thị toast thông báo lỗi
         ToastService.error('Không thể xử lý các file ảnh. Vui lòng thử lại.');
+
+        // Gọi callback với thông tin lỗi
+        if (onProgress && typeof onProgress === 'function') {
+            // Tạo thông báo lỗi cho tất cả các file
+            imageFiles.forEach((file) => {
+                onProgress({
+                    error: error.message || 'Lỗi khi xử lý file',
+                    filename: file.name,
+                    status: 'error',
+                });
+            });
+        }
+
         throw error;
     }
+};
+
+/**
+ * Phát hiện cảm xúc nhiều ảnh dùng API thông thường (fallback)
+ * @param {File[]} imageFiles - Mảng các file ảnh
+ * @param {Function} onProgress - Callback khi có kết quả
+ * @returns {Promise<Array>} - Mảng kết quả
+ */
+export const detectEmotionBatchFallback = async (imageFiles, onProgress) => {
+    const results = [];
+
+    for (const file of imageFiles) {
+        try {
+            const result = await detectEmotion(file);
+            const resultWithFilename = {
+                ...result,
+                filename: file.name,
+                status: 'completed',
+            };
+
+            results.push(resultWithFilename);
+
+            if (onProgress && typeof onProgress === 'function') {
+                onProgress(resultWithFilename);
+            }
+        } catch (error) {
+            console.error(`Lỗi xử lý file ${file.name}:`, error);
+
+            const errorResult = {
+                filename: file.name,
+                error: error.message || 'Lỗi không xác định',
+                status: 'error',
+            };
+
+            results.push(errorResult);
+
+            if (onProgress && typeof onProgress === 'function') {
+                onProgress(errorResult);
+            }
+        }
+    }
+
+    return results;
 };
 
 /**
@@ -138,7 +235,7 @@ export const checkDetectionStatus = async (detectionId) => {
         if (guestId) {
             url += `?guest_id=${guestId}`;
         }
-        
+
         const response = await apiClient.get(url);
         return response.data;
     } catch (error) {
@@ -164,7 +261,7 @@ export const getEmotionHistory = async (skip = 0, limit = 10) => {
         if (guestId) {
             url += `&guest_id=${guestId}`;
         }
-        
+
         const response = await apiClient.get(url);
         return response.data;
     } catch (error) {
@@ -191,7 +288,7 @@ export const getEmotionDetail = async (detectionId) => {
         if (guestId) {
             url += `?guest_id=${guestId}`;
         }
-        
+
         const response = await apiClient.get(url);
         return response.data;
     } catch (error) {
@@ -231,7 +328,7 @@ export const deleteEmotionDetection = async (detectionId) => {
         if (guestId) {
             url += `?guest_id=${guestId}`;
         }
-        
+
         await apiClient.delete(url);
         ToastService.success('Đã xóa kết quả phát hiện thành công');
     } catch (error) {

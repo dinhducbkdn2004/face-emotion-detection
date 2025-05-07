@@ -26,7 +26,7 @@ const EmotionDetector = () => {
 
     const [detect, result, loading, error] = useApi(detectEmotion, {
         showSuccessToast: true,
-        successMessage: 'Phân tích cảm xúc thành công!',
+        successMessage: 'Emotion analysis completed successfully!',
     });
 
     // Xử lý khi người dùng chọn file
@@ -52,32 +52,31 @@ const EmotionDetector = () => {
         try {
             await detect(selectedFile);
         } catch (error) {
-            console.error('Lỗi khi phát hiện cảm xúc:', error);
+            console.error('Error detecting emotion:', error);
         }
     };
 
-        return (
-            <Box>
+    return (
+        <Box>
             <Paper
                 component="form"
-                                                    variant="outlined"
-                                                    sx={{
+                variant="outlined"
+                sx={{
                     p: 3,
-                                                        borderRadius: 2,
+                    borderRadius: 2,
                     boxShadow: theme.shadows[1],
-                                                    }}
+                }}
                 onSubmit={handleSubmit}
-                                                        >
+            >
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" fontWeight="medium" gutterBottom>
-                        Phát hiện cảm xúc
-                                                                </Typography>
+                        Emotion Detection
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Tải lên một ảnh có khuôn mặt để nhận diện cảm xúc. Hỗ
-                        trợ các định dạng JPG, PNG và JPEG, kích thước tối đa
-                        5MB.
-                                                                            </Typography>
-                                                                        </Box>
+                        Upload an image containing a face to detect emotions.
+                        Supports JPG, PNG and JPEG formats, maximum size 5MB.
+                    </Typography>
+                </Box>
 
                 <FileUploader
                     onFileSelect={handleFileChange}
@@ -87,26 +86,26 @@ const EmotionDetector = () => {
                     previewUrl={previewUrl}
                 />
 
-                        <Box
-                            sx={{
-                                mt: 3,
-                                display: 'flex',
+                <Box
+                    sx={{
+                        mt: 3,
+                        display: 'flex',
                         gap: 2,
                         flexDirection: isMobile ? 'column' : 'row',
                         justifyContent: 'flex-end',
-                            }}
-                        >
-                            <Button
-                                variant="outlined"
+                    }}
+                >
+                    <Button
+                        variant="outlined"
                         onClick={() => navigate('/history')}
-                                startIcon={<VisibilityOutlined />}
-                            >
-                        Xem lịch sử
-                                    </Button>
-                        <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={!selectedFile || loading}
+                        startIcon={<VisibilityOutlined />}
+                    >
+                        View History
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={!selectedFile || loading}
                         startIcon={
                             loading ? (
                                 <CircularProgress size={20} color="inherit" />
@@ -115,10 +114,10 @@ const EmotionDetector = () => {
                             )
                         }
                     >
-                        {loading ? 'Đang xử lý...' : 'Phát hiện cảm xúc'}
-                        </Button>
+                        {loading ? 'Processing...' : 'Detect Emotion'}
+                    </Button>
                 </Box>
-                </Paper>
+            </Paper>
 
             {/* Hiển thị kết quả */}
             {(result || loading || error) && (
@@ -131,14 +130,12 @@ const EmotionDetector = () => {
                         boxShadow: theme.shadows[1],
                     }}
                 >
-                    <Typography variant="h6" gutterBottom fontWeight="medium">
-                        Kết quả phát hiện
-                    </Typography>
 
                     <EmotionResults
                         result={result}
                         loading={loading}
                         error={error}
+                        previewUrl={previewUrl}
                     />
                 </Paper>
             )}

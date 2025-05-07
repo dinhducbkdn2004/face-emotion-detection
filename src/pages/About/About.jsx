@@ -279,12 +279,13 @@ export default function About() {
                         container
                         spacing={{ xs: 2, md: 3 }}
                         component={motion.div}
-                        variants={containerVariants}
                         initial="hidden"
                         animate="visible"
-                        justifyContent="center"
-                        alignItems="stretch"
-                        sx={{ width: '100%' }}
+                        sx={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}
                     >
                         {technologies.map((tech, index) => (
                             <Grid

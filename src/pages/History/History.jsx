@@ -1,486 +1,613 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
     Container,
     Typography,
     Box,
     Paper,
+    Grid,
     Card,
     CardContent,
-    CardMedia,
-    Grid,
-    Button,
-    Pagination,
-    Skeleton,
     Alert,
+    TextField,
+    Button,
     IconButton,
-    Tooltip,
-    Chip,
+    Pagination,
+    Stack,
     Divider,
-    Avatar,
+    Chip,
     useTheme,
     useMediaQuery,
+    InputAdornment,
+    FormControl,
+    MenuItem,
+    Select,
+    InputLabel,
+    LinearProgress,
+    Tooltip,
+    Badge,
+    Fade,
 } from '@mui/material';
 import {
-    Delete as DeleteIcon,
-    Visibility as ViewIcon,
-    ImageNotSupported,
-    SentimentSatisfiedAlt,
-    AccessTime,
+    Refresh as RefreshIcon,
+    Search as SearchIcon,
+    FilterAlt as FilterIcon,
+    ViewList as ViewListIcon,
+    ViewModule as ViewModuleIcon,
+    CalendarMonth as CalendarIcon,
+    Clear as ClearIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-import useApi from '../../hooks/useApi';
-import {
-    getEmotionHistory,
-    deleteEmotionDetection,
-} from '../../services/emotionService';
-import { format } from 'date-fns';
 
-// Map cảm xúc với màu sắc
-const emotionColors = {
-    happy: '#4caf50',
-    sad: '#5c6bc0',
-    angry: '#f44336',
-    surprise: '#ff9800',
-    fear: '#9c27b0',
-    disgust: '#795548',
-    neutral: '#607d8b',
-    contempt: '#795548',
-};
+// Date picker
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { enUS } from 'date-fns/locale';
+
+import useHistoryData from '../../hooks/useHistoryData';
+import { deleteEmotionDetection } from '../../services/emotionService';
+import HistoryItem from '../../components/history/HistoryItem';
+import HistoryItemSkeleton from '../../components/history/HistoryItemSkeleton';
+import HistoryDetailModal from '../../components/history/HistoryDetailModal';
+import ToastService from '../../toasts/ToastService';
 
 const History = () => {
-    const navigate = useNavigate();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const [page, setPage] = useState(1);
-    const [skip, setSkip] = useState(0);
-    const limit = 12; // Tăng số lượng hiển thị trên mỗi trang
+    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
-    const [fetchHistory, historyData, loading, error, refreshHistory] =
-        useApi(getEmotionHistory);
-    const [deleteDetection] = useApi(deleteEmotionDetection, {
-        showSuccessToast: true,
-        successMessage: 'Đã xóa kết quả phát hiện thành công',
-        onSuccess: () => {
-            fetchHistory(skip, limit);
-        },
+    // State for modal display
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+    const [rowsPerPageOptions] = useState([12, 24, 36, 48]);
+
+    // State for filters
+    const [searchInput, setSearchInput] = useState('');
+    const [fromDateInput, setFromDateInput] = useState(null);
+    const [toDateInput, setToDateInput] = useState(null);
+
+    // Use enhanced useHistoryData hook
+    const {
+        data,
+        loading,
+        error,
+        totalCount,
+        totalPages,
+        page,
+        limit,
+        refresh,
+        handlePageChange,
+        handleLimitChange,
+        handleDateFilterChange,
+        handleKeywordChange,
+    } = useHistoryData({
+        initialLimit: 12,
     });
 
-    // Lấy dữ liệu lịch sử khi trang được tải
-    useEffect(() => {
-        fetchHistory(skip, limit);
-    }, [skip]);
-
-    // Xử lý khi thay đổi trang
-    const handlePageChange = (event, newPage) => {
-        setPage(newPage);
-        setSkip((newPage - 1) * limit);
+    // Handle search form submission
+    const handleSearchSubmit = (e) => {
+        e.preventDefault();
+        handleKeywordChange(searchInput);
     };
 
-    // Xử lý khi xóa một kết quả phát hiện
-    const handleDelete = async (detectionId, event) => {
-        event.stopPropagation();
-        if (
-            window.confirm('Bạn có chắc chắn muốn xóa kết quả phát hiện này?')
-        ) {
-            try {
-                await deleteDetection(detectionId);
-            } catch (error) {
-                console.error('Lỗi khi xóa kết quả phát hiện:', error);
+    // Handle date filter changes
+    const applyDateFilter = () => {
+        handleDateFilterChange(fromDateInput, toDateInput);
+    };
+
+    // Clear all filters
+    const clearAllFilters = () => {
+        setSearchInput('');
+        setFromDateInput(null);
+        setToDateInput(null);
+        handleKeywordChange('');
+        handleDateFilterChange(null, null);
+    };
+
+    // Handle delete detection result
+    const handleDelete = useCallback(
+        async (detectionId) => {
+            if (
+                window.confirm(
+                    'Are you sure you want to delete this detection result?'
+                )
+            ) {
+                try {
+                    await deleteEmotionDetection(detectionId);
+                    ToastService.success(
+                        'Detection result deleted successfully'
+                    );
+
+                    // Close modal if the viewed item is being deleted
+                    if (
+                        modalOpen &&
+                        selectedItem &&
+                        selectedItem.detection_id === detectionId
+                    ) {
+                        setModalOpen(false);
+                        setSelectedItem(null);
+                    }
+
+                    refresh(); // Refresh data after deletion
+                } catch (error) {
+                    console.error('Error when deleting:', error);
+                    ToastService.error(
+                        'Could not delete detection result. Please try again.'
+                    );
+                }
             }
-        }
-    };
-
-    // Xử lý khi xem chi tiết một kết quả phát hiện
-    const handleView = (detectionId) => {
-        navigate(`/history/${detectionId}`);
-    };
-
-    const renderItemSkeleton = (key) => (
-        <Grid container spacing={3}>
-            <Grid item xs={12} md={5}>
-                <Skeleton
-                    variant="rectangular"
-                    height={300}
-                    sx={{
-                        borderRadius: 2,
-                        mb: 2,
-                    }}
-                />
-                <Skeleton variant="text" height={30} sx={{ mb: 1 }} />
-                <Skeleton variant="text" width="60%" />
-            </Grid>
-            <Grid item xs={12} md={7}>
-                <Box sx={{ mb: 3 }}>
-                    <Skeleton
-                        variant="text"
-                        height={40}
-                        width="50%"
-                        sx={{ mb: 1 }}
-                    />
-                    <Skeleton variant="text" width="30%" />
-                </Box>
-                <Grid container spacing={2}>
-                    {[0, 1].map((item) => (
-                        <Grid item xs={12} sm={6} key={item}>
-                            <Card variant="outlined" sx={{ borderRadius: 2 }}>
-                                <CardContent>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            mb: 2,
-                                        }}
-                                    >
-                                        <Skeleton
-                                            variant="circular"
-                                            width={40}
-                                            height={40}
-                                            sx={{ mr: 1.5 }}
-                                        />
-                                        <Box>
-                                            <Skeleton
-                                                variant="text"
-                                                width={100}
-                                            />
-                                            <Skeleton
-                                                variant="text"
-                                                width={80}
-                                            />
-                                        </Box>
-                                    </Box>
-                                    {[0, 1, 2].map((i) => (
-                                        <Box key={i} sx={{ mb: 1.5 }}>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent:
-                                                        'space-between',
-                                                    mb: 0.5,
-                                                }}
-                                            >
-                                                <Skeleton
-                                                    variant="text"
-                                                    width={80}
-                                                />
-                                                <Skeleton
-                                                    variant="text"
-                                                    width={40}
-                                                />
-                                            </Box>
-                                            <Skeleton
-                                                variant="rectangular"
-                                                height={6}
-                                                sx={{ borderRadius: 3 }}
-                                            />
-                                        </Box>
-                                    ))}
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            </Grid>
-        </Grid>
+        },
+        [modalOpen, selectedItem, refresh]
     );
 
+    // Handle view detail click
+    const handleViewDetail = useCallback((item) => {
+        setSelectedItem(item);
+        setModalOpen(true);
+    }, []);
 
-    // Render skeleton loading grid
+    // Close modal
+    const handleCloseModal = () => {
+        setModalOpen(false);
+    };
+
+    // Render loading skeletons
     const renderSkeletons = () => {
-        return [...Array(limit)].map((_, index) =>
-            renderItemSkeleton(`skeleton-${index}`)
+        return (
+            <Grid container spacing={2}>
+                {[...Array(limit)].map((_, index) => (
+                    <Grid
+                        item
+                        xs={12}
+                        sm={viewMode === 'grid' ? 6 : 12}
+                        md={viewMode === 'grid' ? 4 : 12}
+                        lg={viewMode === 'grid' ? 3 : 12}
+                        key={index}
+                    >
+                        <HistoryItemSkeleton />
+                    </Grid>
+                ))}
+            </Grid>
+        );
+    };
+
+    // Render items list
+    const renderItems = () => {
+        if (data?.length === 0) {
+            return (
+                <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
+                    No results match your filters. Please change filters and try
+                    again.
+                </Alert>
+            );
+        }
+
+        return (
+            <Grid container spacing={2}>
+                {data?.map((item) => (
+                    <Grid
+                        item
+                        xs={12}
+                        sm={viewMode === 'grid' ? 6 : 12}
+                        md={viewMode === 'grid' ? 4 : 12}
+                        lg={viewMode === 'grid' ? 3 : 12}
+                        key={item.detection_id}
+                    >
+                        <HistoryItem
+                            item={item}
+                            onDelete={handleDelete}
+                            onView={handleViewDetail}
+                            viewMode={viewMode}
+                        />
+                    </Grid>
+                ))}
+            </Grid>
         );
     };
 
     return (
-        <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
-            <Paper
-                elevation={0}
-                sx={{
-                    p: { xs: 2, sm: 3, md: 4 },
-                    borderRadius: 3,
-                    bgcolor: 'background.paper',
-                    boxShadow: theme.shadows[2],
-                    mb: 4,
-                    maxWidth: '100%',
-                    overflow: 'hidden',
-                }}
-            >
-                <Typography
-                    variant={isMobile ? 'h5' : 'h4'}
-                    fontWeight="bold"
+        <Fade in={true}>
+            <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+                <Paper
+                    elevation={0}
                     sx={{
-                        mb: 3,
-                        textAlign: 'center',
-                        background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
+                        p: { xs: 2, sm: 3, md: 4 },
+                        borderRadius: 4,
+                        bgcolor: 'background.paper',
+                        boxShadow: theme.shadows[2],
+                        mb: 4,
+                        position: 'relative',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            boxShadow: theme.shadows[4],
+                        },
                     }}
                 >
-                    Lịch sử phát hiện cảm xúc
-                </Typography>
-
-                <Divider sx={{ mb: 4 }} />
-
-                {error && (
-                    <Alert
-                        severity="error"
+                    {/* Header with title */}
+                    <Typography
+                        variant={isMobile ? 'h5' : 'h4'}
+                        fontWeight="bold"
                         sx={{
                             mb: 3,
-                            borderRadius: 2,
-                            boxShadow: theme.shadows[1],
+                            textAlign: 'center',
+                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            letterSpacing: '0.5px',
                         }}
                     >
-                        Không thể tải lịch sử phát hiện cảm xúc. Vui lòng thử
-                        lại sau.
-                    </Alert>
-                )}
+                        Emotion Detection History
+                    </Typography>
 
-                <Grid container spacing={3}>
-                    {loading ? (
-                        renderSkeletons()
-                    ) : historyData?.length > 0 ? (
-                        historyData.map((item) => (
-                            <Grid
-                                item
-                                xs={12}
-                                sm={6}
-                                md={4}
-                                lg={3}
-                                key={item.detection_id}
-                            >
-                                <Card
-                                    sx={{
-                                        height: '100%',
-                                        borderRadius: 2,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        boxShadow: theme.shadows[1],
-                                        '&:hover': {
-                                            transform: 'translateY(-4px)',
-                                            boxShadow: theme.shadows[4],
-                                        },
-                                        position: 'relative',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                    }}
-                                    onClick={() =>
-                                        handleView(item.detection_id)
-                                    }
-                                >
-                                    <Box sx={{ position: 'relative' }}>
-                                        {item.image_url ? (
-                                            <CardMedia
-                                                component="img"
-                                                height={140}
-                                                image={item.image_url}
-                                                alt="Face detection"
-                                                sx={{
-                                                    objectFit: 'cover',
-                                                    borderRadius: '8px 8px 0 0',
-                                                }}
-                                            />
-                                        ) : (
-                                            <Box
-                                                sx={{
-                                                    height: 140,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    bgcolor: 'action.hover',
-                                                    borderRadius: '8px 8px 0 0',
-                                                }}
-                                            >
-                                                <ImageNotSupported
-                                                    sx={{
-                                                        fontSize: 40,
-                                                        color: 'text.secondary',
-                                                        opacity: 0.5,
-                                                    }}
-                                                />
-                                            </Box>
-                                        )}
+                    <Divider sx={{ mb: 4 }} />
 
-                                        {/* Chip hiển thị số khuôn mặt */}
-                                        {item.detection_results
-                                            .face_detected && (
-                                            <Chip
-                                                label={`${item.detection_results.faces.length} khuôn mặt`}
+                    {/* Filter section */}
+                    <Box
+                        sx={{
+                            mb: 4,
+                            p: 2,
+                            bgcolor:
+                                theme.palette.mode === 'dark'
+                                    ? 'rgba(255,255,255,0.05)'
+                                    : 'rgba(0,0,0,0.02)',
+                            borderRadius: 3,
+                        }}
+                    >
+                        <LocalizationProvider
+                            dateAdapter={AdapterDateFns}
+                            adapterLocale={enUS}
+                        >
+                            <Grid container spacing={2} alignItems="center">
+                                {/* Date filters */}
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <DatePicker
+                                        label="From Date"
+                                        value={fromDateInput}
+                                        onChange={(newValue) =>
+                                            setFromDateInput(newValue)
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                fullWidth
                                                 size="small"
-                                                color="primary"
                                                 sx={{
-                                                    position: 'absolute',
-                                                    bottom: 8,
-                                                    left: 8,
-                                                    fontWeight: 'medium',
+                                                    '& .MuiOutlinedInput-root':
+                                                        {
+                                                            borderRadius: 2,
+                                                        },
                                                 }}
                                             />
                                         )}
-                                    </Box>
+                                        maxDate={toDateInput || undefined}
+                                    />
+                                </Grid>
 
-                                    <CardContent sx={{ flexGrow: 1, pt: 2 }}>
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'flex-start',
-                                                mb: 1.5,
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="subtitle1"
-                                                fontWeight="medium"
-                                                noWrap
-                                                sx={{ maxWidth: '80%' }}
-                                            >
-                                                {format(
-                                                    new Date(item.timestamp),
-                                                    'dd/MM/yyyy HH:mm'
-                                                )}
-                                            </Typography>
-
-                                            <Box>
-                                                <Tooltip title="Xem chi tiết">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleView(
-                                                                item.detection_id
-                                                            );
-                                                        }}
-                                                        sx={{ mr: 0.5 }}
-                                                    >
-                                                        <ViewIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-
-                                                <Tooltip title="Xóa">
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={(e) =>
-                                                            handleDelete(
-                                                                item.detection_id,
-                                                                e
-                                                            )
-                                                        }
-                                                    >
-                                                        <DeleteIcon fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        </Box>
-
-                                        {!item.detection_results
-                                            .face_detected ? (
-                                            <Alert
-                                                severity="info"
-                                                icon={false}
+                                <Grid item xs={12} sm={6} md={3}>
+                                    <DatePicker
+                                        label="To Date"
+                                        value={toDateInput}
+                                        onChange={(newValue) =>
+                                            setToDateInput(newValue)
+                                        }
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                fullWidth
+                                                size="small"
                                                 sx={{
-                                                    py: 0.5,
-                                                    borderRadius: 1,
-                                                    fontSize: '0.8rem',
+                                                    '& .MuiOutlinedInput-root':
+                                                        {
+                                                            borderRadius: 2,
+                                                        },
                                                 }}
-                                            >
-                                                Không phát hiện khuôn mặt
-                                            </Alert>
-                                        ) : (
-                                            item.detection_results.faces
-                                                .length > 0 && (
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        mt: 0.5,
-                                                    }}
-                                                >
-                                                    <SentimentSatisfiedAlt
-                                                        fontSize="small"
-                                                        sx={{
-                                                            mr: 1,
-                                                            color:
-                                                                emotionColors[
-                                                                    item
-                                                                        .detection_results
-                                                                        .faces[0]
-                                                                        .emotions[0]
-                                                                        .emotion
-                                                                ] ||
-                                                                'primary.main',
-                                                        }}
-                                                    />
-                                                    <Typography variant="body2">
-                                                        Cảm xúc chính:{' '}
-                                                        <Typography
-                                                            component="span"
-                                                            variant="body2"
-                                                            fontWeight="bold"
+                                            />
+                                        )}
+                                        minDate={fromDateInput || undefined}
+                                    />
+                                </Grid>
+
+                                {/* Search form */}
+                                <Grid item xs={12} md={4}>
+                                    <form
+                                        onSubmit={handleSearchSubmit}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            placeholder="Search by emotion, date..."
+                                            value={searchInput}
+                                            onChange={(e) =>
+                                                setSearchInput(e.target.value)
+                                            }
+                                            sx={{
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                },
+                                            }}
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <SearchIcon
+                                                            fontSize="small"
                                                             sx={{
-                                                                color:
-                                                                    emotionColors[
-                                                                        item
-                                                                            .detection_results
-                                                                            .faces[0]
-                                                                            .emotions[0]
-                                                                            .emotion
-                                                                    ] ||
-                                                                    'text.primary',
+                                                                color: 'text.secondary',
+                                                            }}
+                                                        />
+                                                    </InputAdornment>
+                                                ),
+                                                endAdornment: searchInput && (
+                                                    <InputAdornment position="end">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                setSearchInput(
+                                                                    ''
+                                                                );
+                                                                if (searchInput)
+                                                                    handleKeywordChange(
+                                                                        ''
+                                                                    );
                                                             }}
                                                         >
-                                                            {item.detection_results.faces[0].emotions[0].emotion
-                                                                .charAt(0)
-                                                                .toUpperCase() +
-                                                                item.detection_results.faces[0].emotions[0].emotion.slice(
-                                                                    1
-                                                                )}
-                                                        </Typography>
-                                                    </Typography>
-                                                </Box>
-                                            )
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))
-                    ) : (
-                        <Grid item xs={12}>
-                            <Alert
-                                severity="info"
-                                sx={{
-                                    borderRadius: 2,
-                                    boxShadow: theme.shadows[1],
-                                    p: 2,
-                                }}
-                            >
-                                Bạn chưa có dữ liệu lịch sử phát hiện cảm xúc
-                                nào.
-                            </Alert>
-                        </Grid>
-                    )}
-                </Grid>
+                                                            <ClearIcon fontSize="small" />
+                                                        </IconButton>
+                                                    </InputAdornment>
+                                                ),
+                                            }}
+                                        />
+                                    </form>
+                                </Grid>
 
-                {/* Phân trang */}
-                {!loading && historyData?.length > 0 && (
+                                {/* Filter and refresh buttons */}
+                                <Grid item xs={12} md={2}>
+                                    <Stack direction="row" spacing={1}>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={applyDateFilter}
+                                            startIcon={<FilterIcon />}
+                                            fullWidth
+                                            sx={{
+                                                borderRadius: 2,
+                                                textTransform: 'none',
+                                                boxShadow: 'none',
+                                                '&:hover': {
+                                                    boxShadow: theme.shadows[2],
+                                                },
+                                            }}
+                                        >
+                                            {isMobile ? '' : 'Filter'}
+                                        </Button>
+
+                                        <Button
+                                            variant="outlined"
+                                            onClick={clearAllFilters}
+                                            startIcon={<RefreshIcon />}
+                                            fullWidth
+                                            sx={{
+                                                borderRadius: 2,
+                                                textTransform: 'none',
+                                            }}
+                                        >
+                                            {isMobile ? '' : 'Reset'}
+                                        </Button>
+                                    </Stack>
+                                </Grid>
+                            </Grid>
+                        </LocalizationProvider>
+                    </Box>
+
+                    {/* Toolbar with result count and view mode toggle */}
                     <Box
                         sx={{
                             display: 'flex',
-                            justifyContent: 'center',
-                            mt: 4,
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            mb: 3,
+                            p: 2,
+                            borderRadius: 3,
+                            bgcolor:
+                                theme.palette.mode === 'dark'
+                                    ? 'rgba(255,255,255,0.05)'
+                                    : 'rgba(0,0,0,0.02)',
                         }}
                     >
-                        <Pagination
-                            count={10} // Sẽ cần tính toán dựa trên tổng số bản ghi và limit
-                            page={page}
-                            onChange={handlePageChange}
-                            color="primary"
-                            shape="rounded"
-                            size={isMobile ? 'small' : 'medium'}
-                        />
+                        {/* Statistics */}
+                        <Box sx={{ mb: { xs: 2, sm: 0 } }}>
+                            <Stack
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
+                            >
+                                <Chip
+                                    label={`Total: ${totalCount || 0} results`}
+                                    variant="outlined"
+                                    size="small"
+                                    sx={{
+                                        borderRadius: 2,
+                                        bgcolor:
+                                            theme.palette.primary.main + '10',
+                                        borderColor:
+                                            theme.palette.primary.main + '50',
+                                        color: theme.palette.primary.main,
+                                        fontWeight: 500,
+                                    }}
+                                />
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: 'text.secondary',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                    }}
+                                >
+                                    <CalendarIcon fontSize="small" />
+                                    Page {page}/{totalPages || 1}
+                                </Typography>
+                            </Stack>
+                        </Box>
+
+                        {/* View mode and rows per page */}
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    bgcolor: theme.palette.background.paper,
+                                    borderRadius: 2,
+                                    p: 0.5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            >
+                                <Tooltip title="List View">
+                                    <IconButton
+                                        size="small"
+                                        color={
+                                            viewMode === 'list'
+                                                ? 'primary'
+                                                : 'default'
+                                        }
+                                        onClick={() => setViewMode('list')}
+                                    >
+                                        <ViewListIcon />
+                                    </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title="Grid View">
+                                    <IconButton
+                                        size="small"
+                                        color={
+                                            viewMode === 'grid'
+                                                ? 'primary'
+                                                : 'default'
+                                        }
+                                        onClick={() => setViewMode('grid')}
+                                    >
+                                        <ViewModuleIcon />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+
+                            <FormControl
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                    minWidth: 120,
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
+                            >
+                                <InputLabel id="rows-per-page-label">
+                                    Rows
+                                </InputLabel>
+                                <Select
+                                    labelId="rows-per-page-label"
+                                    value={limit}
+                                    onChange={(e) =>
+                                        handleLimitChange(e.target.value)
+                                    }
+                                    label="Rows"
+                                >
+                                    {rowsPerPageOptions.map((option) => (
+                                        <MenuItem key={option} value={option}>
+                                            {option}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
                     </Box>
+
+                    {/* Loading indicator */}
+                    {loading && (
+                        <Box sx={{ width: '100%', mb: 2 }}>
+                            <LinearProgress
+                                sx={{
+                                    borderRadius: 1,
+                                    height: 6,
+                                    '& .MuiLinearProgress-bar': {
+                                        borderRadius: 1,
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
+
+                    {/* Error message */}
+                    {error && (
+                        <Alert
+                            severity="error"
+                            sx={{
+                                mb: 3,
+                                borderRadius: 2,
+                                '& .MuiAlert-icon': {
+                                    fontSize: '1.5rem',
+                                },
+                            }}
+                        >
+                            Could not load detection history. Please try again
+                            later.
+                        </Alert>
+                    )}
+
+                    {/* Content - List or skeleton */}
+                    <Box sx={{ mb: 3, minHeight: '50vh' }}>
+                        <Fade in={!loading} timeout={500}>
+                            <div>
+                                {loading ? renderSkeletons() : renderItems()}
+                            </div>
+                        </Fade>
+                    </Box>
+
+                    {/* Pagination */}
+                    {!loading && data?.length > 0 && (
+                        <Box
+                            sx={{
+                                mt: 4,
+                                display: 'flex',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Pagination
+                                count={totalPages || 1}
+                                page={page}
+                                onChange={(_, newPage) =>
+                                    handlePageChange(newPage)
+                                }
+                                color="primary"
+                                shape="rounded"
+                                showFirstButton
+                                showLastButton
+                                size={isMobile ? 'small' : 'medium'}
+                                sx={{
+                                    '& .MuiPaginationItem-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
+                </Paper>
+
+                {/* Detail Modal */}
+                {selectedItem && (
+                    <HistoryDetailModal
+                        open={modalOpen}
+                        onClose={handleCloseModal}
+                        item={selectedItem}
+                        onDelete={handleDelete}
+                    />
                 )}
-            </Paper>
-        </Container>
+            </Container>
+        </Fade>
     );
 };
 

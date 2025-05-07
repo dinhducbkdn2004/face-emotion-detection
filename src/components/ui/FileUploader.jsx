@@ -224,14 +224,14 @@ const FileUploader = ({
                             component="div"
                             color="text.secondary"
                         >
-                            Kéo thả file vào đây
+                            Drag and drop file here
                         </Typography>
                         <Typography
                             variant="body2"
                             color="text.secondary"
                             sx={{ mb: 1 }}
                         >
-                            Hoặc click để chọn file
+                            Or click to select file
                         </Typography>
                         <Button
                             variant="contained"
@@ -242,7 +242,7 @@ const FileUploader = ({
                             }}
                             startIcon={<CloudUpload />}
                         >
-                            Chọn file
+                            Select file
                         </Button>
                     </Stack>
                 </Paper>

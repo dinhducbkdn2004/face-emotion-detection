@@ -110,7 +110,7 @@ const Dashboard = () => {
                                 letterSpacing: '0.5px',
                             }}
                         >
-                            Phát hiện cảm xúc khuôn mặt
+                            Face Emotion Detection
                         </Typography>
 
                         <Divider sx={{ mb: 3 }} />
@@ -157,7 +157,7 @@ const Dashboard = () => {
                         >
                             <Tab
                                 label={
-                                    isMobile ? 'Một ảnh' : 'Phát hiện một ảnh'
+                                    isMobile ? 'Single Image' : 'Single Image Detection'
                                 }
                                 id="emotion-tab-0"
                                 aria-controls="emotion-tabpanel-0"
@@ -167,8 +167,8 @@ const Dashboard = () => {
                             <Tab
                                 label={
                                     isMobile
-                                        ? 'Nhiều ảnh'
-                                        : 'Phát hiện nhiều ảnh'
+                                        ? 'Multiple Images'
+                                        : 'Multiple Images Detection'
                                 }
                                 id="emotion-tab-1"
                                 aria-controls="emotion-tabpanel-1"

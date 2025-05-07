@@ -26,6 +26,7 @@ import {
     Chip,
     Badge,
     Stack,
+    Skeleton,
 } from '@mui/material';
 import {
     CloudUpload,
@@ -40,9 +41,14 @@ import {
     Mood as MoodIcon,
     InfoOutlined,
 } from '@mui/icons-material';
-import { detectEmotionBatch } from '../services/emotionService';
+import {
+    detectEmotionBatch,
+    detectEmotionBatchFallback,
+} from '../services/emotionService';
+import ToastService from '../toasts/ToastService';
+import BatchResultsList from './emotion/BatchResultsList';
 
-// Map cảm xúc với màu sắc
+// Emotion color mapping
 const emotionColors = {
     happy: '#4caf50',
     sad: '#5c6bc0',
@@ -64,8 +70,10 @@ const BatchEmotionDetector = () => {
     const [error, setError] = useState(null);
     const [processedCount, setProcessedCount] = useState(0);
     const [dragActive, setDragActive] = useState(false);
+    const [useSSE, setUseSSE] = useState(true); // Default to using SSE
+    const [fileThumbUrls, setFileThumbUrls] = useState({});
 
-    // Xử lý kéo thả file
+    // Handle drag and drop
     const handleDrag = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -84,90 +92,189 @@ const BatchEmotionDetector = () => {
 
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        }
+    };
 
-            // Lọc files hợp lệ
-            const validFiles = files.filter((file) => {
-                // Kiểm tra kích thước file (giới hạn 5MB)
+    // Validate file
+    const validateFile = (file) => {
+        // Check file size (limit 5MB)
                 if (file.size > 5 * 1024 * 1024) {
-                    return false;
+            return {
+                valid: false,
+                error: `File "${file.name}" exceeds the size limit (5MB)`,
+            };
                 }
-                // Kiểm tra loại file (chỉ chấp nhận ảnh)
+
+        // Check file format
                 if (!file.type.match('image.*')) {
-                    return false;
-                }
-                return true;
+            return {
+                valid: false,
+                error: `File "${file.name}" is not an image`,
+            };
+        }
+
+        return { valid: true };
+    };
+
+    // Handle file list
+    const handleFiles = (files) => {
+        // List of errors to display
+        const errors = [];
+        const validFiles = [];
+
+        files.forEach((file) => {
+            const validation = validateFile(file);
+            if (validation.valid) {
+                validFiles.push(file);
+            } else {
+                errors.push(validation.error);
+            }
+        });
+
+        if (errors.length > 0) {
+            ToastService.warning(
+                `${errors.length} invalid files: ${errors.slice(0, 2).join(', ')}${errors.length > 2 ? ',...' : ''}`
+            );
+        }
+
+        if (validFiles.length > 0) {
+            // Create temporary URLs for new files
+            const newThumbUrls = {};
+            validFiles.forEach((file) => {
+                newThumbUrls[file.name] = URL.createObjectURL(file);
             });
 
-            if (validFiles.length !== files.length) {
-                alert(
-                    'Một số file không hợp lệ. Chỉ chấp nhận ảnh và kích thước dưới 5MB.'
-                );
-            }
-
+            setFileThumbUrls((prev) => ({ ...prev, ...newThumbUrls }));
             setSelectedFiles((prev) => [...prev, ...validFiles]);
         }
     };
 
-    // Xử lý khi người dùng chọn files
+    // Handle file selection
     const handleFileChange = (event) => {
         const files = Array.from(event.target.files);
         if (!files.length) return;
-
-        // Lọc files hợp lệ
-        const validFiles = files.filter((file) => {
-            // Kiểm tra kích thước file (giới hạn 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                return false;
-            }
-            // Kiểm tra loại file (chỉ chấp nhận ảnh)
-            if (!file.type.match('image.*')) {
-                return false;
-            }
-            return true;
-        });
-
-        if (validFiles.length !== files.length) {
-            alert(
-                'Một số file không hợp lệ. Chỉ chấp nhận ảnh và kích thước dưới 5MB.'
-            );
-        }
-
-        setSelectedFiles((prev) => [...prev, ...validFiles]);
+        handleFiles(files);
     };
 
-    // Xóa một file từ danh sách
+    // Remove a file from the list
     const handleRemoveFile = (index) => {
+        const fileToRemove = selectedFiles[index];
+        if (fileToRemove && fileThumbUrls[fileToRemove.name]) {
+            URL.revokeObjectURL(fileThumbUrls[fileToRemove.name]);
+            setFileThumbUrls((prev) => {
+                const newUrls = { ...prev };
+                delete newUrls[fileToRemove.name];
+                return newUrls;
+            });
+        }
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     };
 
-    // Xóa tất cả files
+    // Clear all files
     const handleClearFiles = () => {
+        // Remove all temporary URLs
+        Object.values(fileThumbUrls).forEach((url) => {
+            URL.revokeObjectURL(url);
+        });
+        setFileThumbUrls({});
         setSelectedFiles([]);
+        setResults([]);
+        setProcessedCount(0);
+        setError(null);
     };
 
-    // Xử lý kết quả mới từ SSE
+    // Xử lý kết quả mới từ SSE hoặc API
     const handleNewResult = (result) => {
+        console.log('Received new result:', result);
+
+        if (!result) {
+            console.error('Empty result');
+            return;
+        }
+
         setResults((prev) => {
-            // Kiểm tra xem kết quả đã tồn tại chưa
-            const existingIndex = prev.findIndex(
+            // Deep copy của mảng kết quả hiện tại
+            const updatedResults = [...prev];
+
+            // Xử lý kết quả có lỗi
+            if (result.error) {
+                console.log(
+                    'Xử lý kết quả lỗi:',
+                    result.filename,
+                    result.error
+                );
+                const existingIndex = updatedResults.findIndex(
+                    (r) => r.filename === result.filename
+                );
+
+                if (existingIndex >= 0) {
+                    updatedResults[existingIndex] = {
+                        ...updatedResults[existingIndex],
+                        ...result,
+                        status: 'error',
+                        errorMessage: result.error,
+                    };
+                } else {
+                    updatedResults.push({
+                        filename:
+                            result.filename ||
+                            `File không rõ #${updatedResults.length + 1}`,
+                        status: 'error',
+                        errorMessage: result.error,
+                    });
+                }
+
+                return updatedResults;
+            }
+
+            // Xử lý kết quả thành công
+            console.log(
+                'Xử lý kết quả thành công:',
+                result.filename,
+                result.detection_id
+            );
+
+            // Tìm file gốc tương ứng
+            const originalFile = selectedFiles.find(
+                (file) => file.name === result.filename
+            );
+
+            // Tìm dựa trên filename hoặc detection_id
+            const existingIndex = updatedResults.findIndex(
                 (r) =>
-                    r.filename === result.filename ||
-                    r.detection_id === result.detection_id
+                    (result.filename && r.filename === result.filename) ||
+                    (result.detection_id &&
+                        r.detection_id === result.detection_id)
             );
 
             if (existingIndex >= 0) {
-                // Cập nhật kết quả hiện có
-                const updatedResults = [...prev];
+                console.log(
+                    'Cập nhật kết quả cho:',
+                    result.filename || updatedResults[existingIndex].filename
+                );
                 updatedResults[existingIndex] = {
                     ...updatedResults[existingIndex],
                     ...result,
+                    file: originalFile, // Thêm file gốc vào kết quả
                     status: 'completed',
                 };
-                return updatedResults;
             } else {
-                // Thêm kết quả mới
-                return [...prev, { ...result, status: 'completed' }];
+                console.log(
+                    'Thêm kết quả mới:',
+                    result.filename || `File #${updatedResults.length + 1}`
+                );
+                updatedResults.push({
+                    ...result,
+                    filename:
+                        result.filename || `File #${updatedResults.length + 1}`,
+                    file: originalFile, // Thêm file gốc vào kết quả
+                    status: 'completed',
+                });
             }
+
+            console.log('Kết quả đã cập nhật:', updatedResults);
+            return updatedResults;
         });
 
         setProcessedCount((prev) => prev + 1);
@@ -175,7 +282,7 @@ const BatchEmotionDetector = () => {
 
     // Bắt đầu xử lý batch
     const handleSubmit = async (event) => {
-        event.preventDefault();
+        if (event) event.preventDefault();
         if (!selectedFiles.length) return;
 
         try {
@@ -192,14 +299,46 @@ const BatchEmotionDetector = () => {
             setResults(initialResults);
 
             // Gọi API để xử lý batch
+            if (useSSE) {
+                try {
             await detectEmotionBatch(selectedFiles, handleNewResult);
         } catch (error) {
-            console.error('Lỗi khi xử lý batch:', error);
+                    console.error(
+                        'SSE not available, switching to fallback:',
+                        error
+                    );
+                    setUseSSE(false);
+                    await detectEmotionBatchFallback(
+                        selectedFiles,
+                        handleNewResult
+                    );
+                }
+            } else {
+                await detectEmotionBatchFallback(
+                    selectedFiles,
+                    handleNewResult
+                );
+            }
+        } catch (error) {
+            console.error('Error processing batch:', error);
             setError(error);
+            ToastService.error(
+                'An error occurred while processing images. Please try again later.'
+            );
         } finally {
             setIsProcessing(false);
         }
     };
+
+    // Xử lý URL tạm thời khi component unmount
+    useEffect(() => {
+        return () => {
+            // Xóa tất cả URL khi component unmount
+            Object.values(fileThumbUrls).forEach((url) => {
+                URL.revokeObjectURL(url);
+            });
+        };
+    }, [fileThumbUrls]);
 
     // Hiển thị trạng thái của mỗi file
     const renderFileStatus = (file, index) => {
@@ -208,36 +347,32 @@ const BatchEmotionDetector = () => {
 
         let statusIcon;
         let statusColor;
-        let statusText = 'Đang chờ';
+        let statusText = '';
 
         if (isProcessing) {
             if (result) {
                 if (result.status === 'completed') {
                     statusIcon = <CheckCircle fontSize="small" />;
                     statusColor = 'success';
-                    statusText = 'Hoàn thành';
+                    statusText = 'Completed';
                 } else if (result.status === 'error') {
                     statusIcon = <ErrorIcon fontSize="small" />;
                     statusColor = 'error';
-                    statusText = 'Lỗi';
+                    statusText = 'Error';
                 } else {
                     statusIcon = <CircularProgress size={16} />;
                     statusColor = 'primary';
-                    statusText = 'Đang xử lý';
-                }
+                    statusText = 'Processing';
             }
         } else {
-            statusIcon = <PendingOutlined fontSize="small" />;
-            statusColor = 'default';
+                statusIcon = <CircularProgress size={16} />;
+                statusColor = 'primary';
+                statusText = 'Processing';
+            }
         }
 
-        // Tạo URL tạm thời để hiển thị ảnh thu nhỏ
-        const thumbUrl = URL.createObjectURL(file);
-
-        // Xóa URL khi component unmount hoặc được render lại
-        useEffect(() => {
-            return () => URL.revokeObjectURL(thumbUrl);
-        }, [thumbUrl]);
+        // Sử dụng URL tạm thời từ state thay vì tạo mới
+        const thumbUrl = fileThumbUrls[file.name];
 
         return (
             <ListItem
@@ -254,507 +389,314 @@ const BatchEmotionDetector = () => {
                 }}
             >
                 <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        width: '100%',
+                    }}
+                >
+                    <Box
+                        sx={{
+                            position: 'relative',
+                            width: 40,
+                            height: 40,
+                            mr: 2,
+                        }}
+                    >
+                        {isProcessing && !result?.status ? (
+                            <Skeleton
+                                variant="rectangular"
+                                animation="wave"
+                                width={40}
+                                height={40}
+                                sx={{
+                                    borderRadius: 1,
+                                }}
+                            />
+                        ) : (
+                <Box
                     component="img"
                     src={thumbUrl}
                     alt={file.name}
                     sx={{
                         width: 40,
                         height: 40,
-                        objectFit: 'cover',
                         borderRadius: 1,
-                        mr: 2,
+                                    objectFit: 'cover',
                         border: '1px solid',
                         borderColor: 'divider',
                     }}
                 />
+                        )}
+                        {isProcessing && !result?.status && (
+                            <CircularProgress
+                                size={24}
+                                sx={{
+                                    position: 'absolute',
+                                    top: '50%',
+                                    left: '50%',
+                                    marginTop: '-12px',
+                                    marginLeft: '-12px',
+                                }}
+                            />
+                        )}
+                    </Box>
+
                 <ListItemText
                     primary={file.name}
                     secondary={`${(file.size / 1024).toFixed(1)} KB`}
                     primaryTypographyProps={{
-                        noWrap: true,
-                        sx: {
-                            fontWeight:
-                                isProcessing && result?.status === 'completed'
-                                    ? 'medium'
-                                    : 'normal',
-                        },
-                    }}
-                    sx={{
-                        mr: 2,
-                        '& .MuiListItemText-primary': {
-                            textOverflow: 'ellipsis',
+                            variant: 'body2',
+                            fontWeight: 'medium',
+                            sx: {
                             overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
-                            maxWidth: { xs: '120px', sm: '200px', md: '300px' },
-                        },
-                    }}
-                />
+                            },
+                        }}
+                        secondaryTypographyProps={{
+                            variant: 'caption',
+                        }}
+                        sx={{ mr: 2 }}
+                    />
+
+                    <Box
+                        sx={{
+                            ml: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                    >
+                        {statusText && (
                 <Chip
                     icon={statusIcon}
                     label={statusText}
                     size="small"
                     color={statusColor}
-                    variant={statusColor === 'default' ? 'outlined' : 'filled'}
-                    sx={{
-                        minWidth: 100,
-                        ml: 'auto',
-                    }}
-                />
-                <ListItemSecondaryAction>
-                    <Tooltip title="Xóa">
+                                sx={{ mr: 1 }}
+                            />
+                        )}
                         <IconButton
-                            edge="end"
-                            aria-label="delete"
+                            size="small"
                             onClick={() => handleRemoveFile(index)}
                             disabled={isProcessing}
-                            size="small"
-                            sx={{ ml: 1 }}
+                            color="error"
+                            sx={{
+                                visibility: isProcessing ? 'hidden' : 'visible',
+                            }}
                         >
                             <Delete fontSize="small" />
                         </IconButton>
-                    </Tooltip>
-                </ListItemSecondaryAction>
+                    </Box>
+                </Box>
             </ListItem>
         );
     };
 
-    // Hiển thị kết quả nhận diện cho mỗi ảnh
-    const renderResults = () => {
-        const completedResults = results.filter(
-            (r) => r.status === 'completed' && r.detection_results
-        );
-
-        if (!completedResults.length) return null;
-
-        return (
-            <Box>
-                <Typography
-                    variant="h6"
-                    fontWeight="medium"
-                    gutterBottom
-                    sx={{ display: 'flex', alignItems: 'center' }}
-                >
-                    Kết quả phát hiện
-                    <Tooltip title="Các kết quả được sắp xếp theo thứ tự hoàn thành">
-                        <InfoOutlined
-                            fontSize="small"
-                            sx={{
-                                ml: 1,
-                                color: 'text.secondary',
-                                cursor: 'help',
-                            }}
-                        />
-                    </Tooltip>
-                </Typography>
-
-                <Stack spacing={2} sx={{ mt: 1 }}>
-                    {completedResults.map((result, index) => {
-                        const hasFaces = result.detection_results.face_detected;
-                        const faceCount = hasFaces
-                            ? result.detection_results.faces.length
+    // Component hiển thị trạng thái xử lý batch
+    const BatchProcessingStatus = () => {
+        const progress =
+            selectedFiles.length > 0
+                ? Math.round((processedCount / selectedFiles.length) * 100)
                             : 0;
 
                         return (
-                            <Zoom
-                                in={true}
-                                key={index}
-                                style={{ transitionDelay: `${index * 150}ms` }}
-                            >
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: { xs: 2, sm: 3 },
-                                        borderRadius: 2,
-                                        bgcolor: 'background.paper',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                            boxShadow:
-                                                '0 4px 20px rgba(0,0,0,0.05)',
-                                            transform: 'translateY(-2px)',
-                                        },
-                                    }}
-                                >
+            <Box sx={{ mt: 2, mb: 3 }}>
                                     <Box
                                         sx={{
                                             display: 'flex',
+                        justifyContent: 'space-between',
                                             alignItems: 'center',
-                                            mb: 2,
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="subtitle1"
-                                            fontWeight="medium"
-                                            sx={{
-                                                maxWidth: '85%',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {result.filename}
+                        mb: 1,
+                    }}
+                >
+                    <Typography variant="subtitle1">
+                        Processing {processedCount}/{selectedFiles.length}{' '}
+                        images
                                         </Typography>
-
-                                        {hasFaces && (
-                                            <Chip
-                                                label={`${faceCount} khuôn mặt`}
-                                                color="primary"
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ ml: 'auto' }}
-                                            />
-                                        )}
+                    <Typography variant="body2" color="text.secondary">
+                        {progress}%
+                    </Typography>
+                </Box>
+                <LinearProgress
+                    variant="determinate"
+                    value={progress}
+                    sx={{ height: 8, borderRadius: 4 }}
+                />
                                     </Box>
+        );
+    };
 
-                                    {hasFaces ? (
-                                        <>
-                                            <Grid
-                                                container
-                                                spacing={2}
-                                                sx={{ mt: 1 }}
-                                            >
-                                                {result.detection_results.faces.map(
-                                                    (face, faceIndex) => {
-                                                        const primaryEmotion =
-                                                            face.emotions[0];
-                                                        const emotionColor =
-                                                            emotionColors[
-                                                                primaryEmotion
-                                                                    .emotion
-                                                            ] ||
-                                                            theme.palette
-                                                                .primary.main;
+    // Hiển thị kết quả phân tích
+    const renderResults = () => {
+        if (!results.length) return null;
 
                                                         return (
-                                                            <Grid
-                                                                item
-                                                                xs={12}
-                                                                sm={6}
-                                                                md={4}
-                                                                key={faceIndex}
-                                                            >
-                                                                <Card
-                                                                    variant="outlined"
+            <Box sx={{ mt: 3 }}>
+                <Paper
+                    elevation={0}
                                                                     sx={{
-                                                                        borderRadius: 2,
-                                                                        borderColor:
-                                                                            'divider',
-                                                                        transition:
-                                                                            'all 0.2s ease',
-                                                                        '&:hover':
-                                                                            {
-                                                                                borderColor:
-                                                                                    emotionColor,
-                                                                                boxShadow: `0 4px 12px rgba(0,0,0,0.08)`,
-                                                                            },
-                                                                    }}
-                                                                >
-                                                                    <CardContent>
+                        p: 3,
+                        borderRadius: 3,
+                        background:
+                            theme.palette.mode === 'dark'
+                                ? 'linear-gradient(145deg, #1a1a1a, #2d2d2d)'
+                                : 'linear-gradient(145deg, #ffffff, #f8f9fa)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    }}
+                >
                                                                         <Box
                                                                             sx={{
-                                                                                display:
-                                                                                    'flex',
-                                                                                alignItems:
-                                                                                    'center',
-                                                                                mb: 2,
-                                                                            }}
-                                                                        >
-                                                                            <Avatar
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 2,
+                            mb: 3,
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <PhotoLibrary
                                                                                 sx={{
-                                                                                    bgcolor:
-                                                                                        emotionColor,
-                                                                                    width: 32,
-                                                                                    height: 32,
-                                                                                    fontSize:
-                                                                                        '0.9rem',
                                                                                     mr: 1,
-                                                                                }}
-                                                                            >
-                                                                                {faceIndex +
-                                                                                    1}
-                                                                            </Avatar>
-                                                                            <Typography
-                                                                                fontWeight="medium"
-                                                                                variant="body2"
-                                                                            >
-                                                                                Khuôn
-                                                                                mặt
-                                                                                #
-                                                                                {faceIndex +
-                                                                                    1}
+                                    color: theme.palette.primary.main,
+                                    fontSize: 28,
+                                }}
+                            />
+                            <Typography variant="h6" fontWeight="bold">
+                                Detection Results ({processedCount}/
+                                {selectedFiles.length})
                                                                             </Typography>
                                                                         </Box>
 
-                                                                        {face.emotions
-                                                                            .slice(
-                                                                                0,
-                                                                                3
-                                                                            )
-                                                                            .map(
-                                                                                (
-                                                                                    item,
-                                                                                    emotionIndex
-                                                                                ) => {
-                                                                                    const isMain =
-                                                                                        emotionIndex ===
-                                                                                        0;
-                                                                                    const color =
-                                                                                        emotionColors[
-                                                                                            item
-                                                                                                .emotion
-                                                                                        ] ||
-                                                                                        theme
-                                                                                            .palette
-                                                                                            .primary
-                                                                                            .main;
-
-                                                                                    return (
-                                                                                        <Box
-                                                                                            key={
-                                                                                                emotionIndex
-                                                                                            }
-                                                                                            sx={{
-                                                                                                mb: 1,
-                                                                                            }}
-                                                                                        >
-                                                                                            <Box
-                                                                                                sx={{
-                                                                                                    display:
-                                                                                                        'flex',
-                                                                                                    justifyContent:
-                                                                                                        'space-between',
-                                                                                                    alignItems:
-                                                                                                        'center',
-                                                                                                }}
-                                                                                            >
-                                                                                                <Typography
-                                                                                                    variant="body2"
-                                                                                                    fontSize="0.8rem"
-                                                                                                    fontWeight={
-                                                                                                        isMain
-                                                                                                            ? 'medium'
-                                                                                                            : 'normal'
-                                                                                                    }
-                                                                                                    color={
-                                                                                                        isMain
-                                                                                                            ? color
-                                                                                                            : 'text.primary'
-                                                                                                    }
-                                                                                                >
-                                                                                                    {item.emotion
-                                                                                                        .charAt(
-                                                                                                            0
-                                                                                                        )
-                                                                                                        .toUpperCase() +
-                                                                                                        item.emotion.slice(
-                                                                                                            1
-                                                                                                        )}
-                                                                                                </Typography>
-                                                                                                <Typography
-                                                                                                    variant="body2"
-                                                                                                    fontSize="0.8rem"
-                                                                                                    fontWeight={
-                                                                                                        isMain
-                                                                                                            ? 'medium'
-                                                                                                            : 'normal'
-                                                                                                    }
-                                                                                                    color={
-                                                                                                        isMain
-                                                                                                            ? color
-                                                                                                            : 'text.secondary'
-                                                                                                    }
-                                                                                                >
-                                                                                                    {item.percentage.toFixed(
-                                                                                                        1
-                                                                                                    )}
-                                                                                                    %
-                                                                                                </Typography>
-                                                                                            </Box>
-
-                                                                                            <Box
-                                                                                                sx={{
-                                                                                                    width: '100%',
-                                                                                                    height: 4,
-                                                                                                    borderRadius: 3,
-                                                                                                    bgcolor:
-                                                                                                        theme
-                                                                                                            .palette
-                                                                                                            .mode ===
-                                                                                                        'dark'
-                                                                                                            ? 'rgba(255,255,255,0.1)'
-                                                                                                            : 'rgba(0,0,0,0.05)',
-                                                                                                    mt: 0.5,
-                                                                                                    overflow:
-                                                                                                        'hidden',
-                                                                                                }}
-                                                                                            >
-                                                                                                <Box
-                                                                                                    sx={{
-                                                                                                        width: `${item.percentage}%`,
-                                                                                                        height: '100%',
-                                                                                                        borderRadius: 3,
-                                                                                                        bgcolor:
-                                                                                                            color,
-                                                                                                        transition:
-                                                                                                            'width 1s ease-in-out',
-                                                                                                    }}
-                                                                                                />
-                                                                                            </Box>
-                                                                                        </Box>
-                                                                                    );
-                                                                                }
-                                                                            )}
-                                                                    </CardContent>
-                                                                </Card>
-                                                            </Grid>
-                                                        );
-                                                    }
-                                                )}
-                                            </Grid>
-
-                                            <Box
-                                                sx={{
-                                                    mt: 2,
-                                                    display: 'flex',
-                                                    justifyContent: 'flex-end',
-                                                }}
-                                            >
-                                                <Button
-                                                    size="small"
-                                                    variant="outlined"
-                                                    onClick={() =>
-                                                        navigate(
-                                                            `/history/${result.detection_id}`
-                                                        )
-                                                    }
-                                                    startIcon={
-                                                        <VisibilityOutlined fontSize="small" />
-                                                    }
-                                                    sx={{
-                                                        borderRadius: 6,
-                                                        textTransform: 'none',
-                                                    }}
-                                                >
-                                                    Chi tiết
-                                                </Button>
+                        {isProcessing && (
+                            <Chip
+                                icon={<PendingOutlined />}
+                                label={`Processing... ${Math.round((processedCount / selectedFiles.length) * 100)}%`}
+                                color="primary"
+                                sx={{ borderRadius: 3 }}
+                            />
+                        )}
                                             </Box>
-                                        </>
-                                    ) : (
-                                        <Alert
-                                            severity="info"
-                                            variant="filled"
-                                            sx={{ mt: 1, borderRadius: 2 }}
-                                        >
-                                            Không phát hiện khuôn mặt nào trong
-                                            ảnh này
-                                        </Alert>
-                                    )}
+
+                    <BatchResultsList results={results} />
                                 </Paper>
-                            </Zoom>
-                        );
-                    })}
-                </Stack>
             </Box>
         );
     };
 
     return (
-        <Grid container spacing={3}>
-            {/* Phần upload files bên trái */}
-            <Grid item xs={12} md={5}>
+        <Box>
+            {/* Phần tải lên */}
                 <Paper
-                    elevation={0}
+                variant="outlined"
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
                     sx={{
-                        p: 3,
                         borderRadius: 2,
-                        height: '100%',
-                        boxShadow:
-                            theme.palette.mode === 'dark'
-                                ? '0 2px 10px rgba(0,0,0,0.2)'
-                                : '0 2px 10px rgba(0,0,0,0.05)',
-                    }}
-                >
-                    <Typography variant="h6" fontWeight="medium" gutterBottom>
-                        Tải lên nhiều ảnh
-                    </Typography>
-
-                    <form onSubmit={handleSubmit}>
-                        {/* Khu vực kéo thả */}
-                        {selectedFiles.length === 0 && (
-                            <Box
-                                sx={{
-                                    border: '2px dashed',
+                    borderStyle: 'dashed',
+                    borderWidth: '2px',
                                     borderColor: dragActive
-                                        ? 'primary.main'
-                                        : 'divider',
-                                    borderRadius: 2,
-                                    p: 4,
-                                    textAlign: 'center',
+                        ? theme.palette.primary.main
+                        : theme.palette.divider,
+                    bgcolor: dragActive
+                        ? theme.palette.action.hover
+                        : 'background.paper',
+                    p: 3,
                                     cursor: 'pointer',
-                                    transition: 'all 0.3s ease',
-                                    mb: 3,
-                                    backgroundColor: dragActive
-                                        ? theme.palette.mode === 'dark'
-                                            ? 'rgba(30, 136, 229, 0.08)'
-                                            : 'rgba(25, 118, 210, 0.04)'
-                                        : 'transparent',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center',
+                    position: 'relative',
                                     '&:hover': {
-                                        backgroundColor:
-                                            theme.palette.mode === 'dark'
-                                                ? 'rgba(30, 136, 229, 0.08)'
-                                                : 'rgba(25, 118, 210, 0.04)',
-                                        transform: 'translateY(-4px)',
-                                    },
-                                }}
-                                onClick={() =>
-                                    document
-                                        .getElementById(
-                                            'upload-multiple-images'
-                                        )
-                                        .click()
-                                }
-                                onDragEnter={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDragOver={handleDrag}
-                                onDrop={handleDrop}
+                        bgcolor: theme.palette.action.hover,
+                    },
+                }}
                             >
                                 <input
-                                    accept="image/*"
-                                    id="upload-multiple-images"
                                     type="file"
+                    id="file-upload"
                                     multiple
-                                    style={{ display: 'none' }}
+                    accept="image/*"
                                     onChange={handleFileChange}
-                                    disabled={isProcessing}
-                                />
-                                <PhotoLibrary
+                    style={{ display: 'none' }}
+                />
+
+                <label
+                    htmlFor="file-upload"
+                    style={{ width: '100%', cursor: 'pointer' }}
+                >
+                    <Box
                                     sx={{
-                                        fontSize: 48,
-                                        color: 'primary.main',
-                                        mb: 2,
-                                        opacity: 0.8,
-                                    }}
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        {isProcessing ? (
+                            <>
+                                <CircularProgress
+                                    variant="determinate"
+                                    value={
+                                        processedCount / selectedFiles.length
+                                    }
+                                    size={48}
+                                    thickness={4}
+                                    sx={{ mb: 2, opacity: 0.8 }}
                                 />
-                                <Typography
-                                    variant="h6"
-                                    gutterBottom
-                                    fontWeight="medium"
-                                >
-                                    Kéo thả hoặc nhấn để chọn nhiều ảnh
+                                <Typography variant="h6" gutterBottom>
+                                    Processing...{' '}
+                                    {Math.round(
+                                        (processedCount /
+                                            selectedFiles.length) *
+                                            100
+                                    )}
+                                    %
+                                </Typography>
+                            </>
+                        ) : (
+                            <>
+                                <PhotoLibrary
+                                    color="primary"
+                                    sx={{ fontSize: 48, mb: 2, opacity: 0.8 }}
+                                />
+                                <Typography variant="h6" gutterBottom>
+                                    Drag and drop images here
                                 </Typography>
                                 <Typography
                                     variant="body2"
                                     color="text.secondary"
+                                    sx={{ mb: 2 }}
                                 >
-                                    Hỗ trợ: JPG, PNG, GIF (Tối đa 5MB/ảnh)
+                                    Or click to select images from your device
                                 </Typography>
-                            </Box>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddPhotoAlternateOutlined />}
+                                    component="span"
+                                >
+                                    Select Images
+                                </Button>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ mt: 2 }}
+                                >
+                                    Supported formats: JPG, PNG, JPEG. Max size:
+                                    5MB
+                                </Typography>
+                            </>
                         )}
+                    </Box>
+                </label>
+            </Paper>
 
                         {/* Hiển thị danh sách files đã chọn */}
                         {selectedFiles.length > 0 && (
-                            <>
+                <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: 2 }}>
+                    {/* Files đã chọn */}
                                 <Box
                                     sx={{
                                         display: 'flex',
@@ -763,152 +705,49 @@ const BatchEmotionDetector = () => {
                                         mb: 2,
                                     }}
                                 >
-                                    <Chip
-                                        icon={<PhotoLibrary fontSize="small" />}
-                                        label={`${selectedFiles.length} ảnh đã chọn`}
-                                        color="primary"
-                                        variant="outlined"
-                                        size="small"
-                                    />
-                                    <Box>
-                                        <Tooltip title="Thêm ảnh">
+                        <Typography variant="subtitle1" fontWeight="medium">
+                            {selectedFiles.length} files selected
+                        </Typography>
                                             <Button
                                                 size="small"
-                                                startIcon={
-                                                    <AddPhotoAlternateOutlined />
-                                                }
-                                                onClick={() =>
-                                                    document
-                                                        .getElementById(
-                                                            'upload-multiple-images'
-                                                        )
-                                                        .click()
-                                                }
-                                                disabled={isProcessing}
-                                                sx={{ mr: 1 }}
-                                            >
-                                                {!isMobile && 'Thêm'}
-                                            </Button>
-                                        </Tooltip>
-                                        <input
-                                            accept="image/*"
-                                            id="upload-multiple-images"
-                                            type="file"
-                                            multiple
-                                            style={{ display: 'none' }}
-                                            onChange={handleFileChange}
-                                            disabled={isProcessing}
-                                        />
-                                        <Tooltip title="Xóa tất cả">
-                                            <Button
-                                                size="small"
-                                                startIcon={<Delete />}
-                                                onClick={handleClearFiles}
-                                                disabled={isProcessing}
                                                 color="error"
                                                 variant="outlined"
+                            onClick={handleClearFiles}
+                            startIcon={<Delete />}
+                            disabled={isProcessing}
                                             >
-                                                {!isMobile && 'Xóa tất cả'}
+                            Clear All
                                             </Button>
-                                        </Tooltip>
-                                    </Box>
                                 </Box>
 
-                                <Paper
-                                    variant="outlined"
-                                    sx={{
-                                        mb: 3,
-                                        borderRadius: 2,
-                                        borderColor: 'divider',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    <List
-                                        sx={{
-                                            maxHeight: 300,
-                                            overflow: 'auto',
-                                            bgcolor: 'background.paper',
-                                            p: 0,
-                                        }}
-                                    >
-                                        {selectedFiles.map(renderFileStatus)}
-                                    </List>
-                                </Paper>
-                            </>
+                    {/* Danh sách files */}
+                    <List sx={{ maxHeight: '300px', overflow: 'auto' }}>
+                        {selectedFiles.map((file, index) =>
+                            renderFileStatus(file, index)
                         )}
+                    </List>
 
-                        {/* Hiển thị progress */}
-                        {isProcessing && (
-                            <Box sx={{ mb: 3 }}>
+                    {/* Buttons */}
                                 <Box
                                     sx={{
+                            mt: 2,
                                         display: 'flex',
-                                        justifyContent: 'space-between',
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight="medium"
-                                        color="primary"
-                                    >
-                                        Đang xử lý {processedCount}/
-                                        {selectedFiles.length} ảnh
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                    >
-                                        {Math.round(
-                                            (processedCount /
-                                                selectedFiles.length) *
-                                                100
-                                        )}
-                                        %
-                                    </Typography>
-                                </Box>
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={
-                                        (processedCount /
-                                            selectedFiles.length) *
-                                        100
-                                    }
-                                    sx={{
-                                        height: 6,
-                                        borderRadius: 3,
-                                    }}
-                                />
-                            </Box>
-                        )}
-
-                        {error && (
-                            <Alert
-                                severity="error"
-                                sx={{ mb: 3, borderRadius: 2 }}
-                                variant="filled"
-                            >
-                                {error.message ||
-                                    'Lỗi khi xử lý ảnh. Vui lòng thử lại.'}
-                            </Alert>
-                        )}
-
+                            gap: 2,
+                            justifyContent: 'flex-end',
+                        }}
+                    >
                         <Button
-                            type="submit"
+                            variant="outlined"
+                            onClick={() => navigate('/history')}
+                            startIcon={<VisibilityOutlined />}
+                            disabled={isProcessing}
+                        >
+                            View History
+                        </Button>
+                        <Button
                             variant="contained"
-                            fullWidth
-                            disabled={
-                                selectedFiles.length === 0 || isProcessing
-                            }
-                            sx={{
-                                py: 1.5,
-                                borderRadius: 2,
-                                fontWeight: 'medium',
-                                fontSize: '1rem',
-                                textTransform: 'none',
-                                position: 'relative',
-                                overflow: 'hidden',
-                            }}
+                            onClick={handleSubmit}
+                            disabled={isProcessing || !selectedFiles.length}
                             startIcon={
                                 isProcessing ? (
                                     <CircularProgress
@@ -920,161 +759,27 @@ const BatchEmotionDetector = () => {
                                 )
                             }
                         >
-                            {isProcessing
-                                ? 'Đang xử lý...'
-                                : 'Phát hiện cảm xúc'}
-                            {isProcessing && (
-                                <LinearProgress
-                                    sx={{
-                                        position: 'absolute',
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        height: 4,
-                                    }}
-                                />
-                            )}
+                            {isProcessing ? 'Processing...' : 'Detect Emotions'}
                         </Button>
-                    </form>
+                    </Box>
                 </Paper>
-            </Grid>
+            )}
 
-            {/* Phần hiển thị kết quả bên phải */}
-            <Grid item xs={12} md={7}>
-                {isProcessing && results.length === 0 ? (
-                    // Hiển thị skeleton khi đang tải
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            borderRadius: 2,
-                            height: '100%',
-                            boxShadow:
-                                theme.palette.mode === 'dark'
-                                    ? '0 2px 10px rgba(0,0,0,0.2)'
-                                    : '0 2px 10px rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                mb: 2,
-                            }}
-                        >
-                            <Typography variant="h6" fontWeight="medium">
-                                Đang xử lý...
-                            </Typography>
-                            <CircularProgress size={20} sx={{ ml: 2 }} />
-                        </Box>
-                        <LinearProgress
-                            sx={{ mb: 3, borderRadius: 3, height: 6 }}
-                        />
+            {/* Hiển thị trạng thái đang xử lý */}
+            {isProcessing && <BatchProcessingStatus />}
 
-                        <Stack spacing={2}>
-                            {[1, 2].map((i) => (
-                                <Paper key={i} sx={{ p: 2, borderRadius: 2 }}>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            mb: 2,
-                                        }}
-                                    >
-                                        <Box sx={{ flexGrow: 1 }}>
-                                            <Box
-                                                sx={{
-                                                    width: '80%',
-                                                    height: 20,
-                                                    bgcolor: 'divider',
-                                                    borderRadius: 1,
-                                                    mb: 1,
-                                                }}
-                                            />
-                                            <Box
-                                                sx={{
-                                                    width: '40%',
-                                                    height: 16,
-                                                    bgcolor: 'divider',
-                                                    borderRadius: 1,
-                                                }}
-                                            />
-                                        </Box>
-                                    </Box>
-                                    <LinearProgress
-                                        sx={{
-                                            mb: 2,
-                                            borderRadius: 3,
-                                            height: 8,
-                                        }}
-                                    />
-                                </Paper>
-                            ))}
-                        </Stack>
-                    </Paper>
-                ) : results.length === 0 ? (
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            borderRadius: 2,
-                            height: '100%',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            bgcolor: theme.palette.background.paper,
-                            minHeight: 300,
-                            boxShadow:
-                                theme.palette.mode === 'dark'
-                                    ? '0 2px 10px rgba(0,0,0,0.2)'
-                                    : '0 2px 10px rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        <PhotoLibrary
-                            sx={{
-                                fontSize: 60,
-                                color: 'text.secondary',
-                                opacity: 0.3,
-                                mb: 2,
-                            }}
-                        />
-                        <Typography
-                            variant="body1"
-                            color="text.secondary"
-                            align="center"
-                        >
-                            Kết quả phát hiện sẽ hiển thị ở đây
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            align="center"
-                            sx={{ mt: 1 }}
-                        >
-                            Hãy tải lên một hoặc nhiều ảnh để bắt đầu
-                        </Typography>
-                    </Paper>
-                ) : (
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            borderRadius: 2,
-                            height: '100%',
-                            boxShadow:
-                                theme.palette.mode === 'dark'
-                                    ? '0 2px 10px rgba(0,0,0,0.2)'
-                                    : '0 2px 10px rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        <Box sx={{ maxHeight: 600, overflow: 'auto', pr: 1 }}>
+            {/* Hiển thị kết quả */}
                             {renderResults()}
-                        </Box>
-                    </Paper>
-                )}
-            </Grid>
-        </Grid>
+
+            {/* Hiển thị lỗi nếu có */}
+            {error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                    Error:{' '}
+                    {error.message ||
+                        'An error occurred while processing images'}
+                </Alert>
+            )}
+        </Box>
     );
 };
 

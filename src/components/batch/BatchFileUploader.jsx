@@ -88,14 +88,14 @@ const BatchFileUploader = ({ onFilesSelect, disabled = false }) => {
                     sx={{ fontSize: 40, mb: 1, opacity: 0.8 }}
                 />
                 <Typography variant="h6" component="div" color="text.secondary">
-                    Kéo thả nhiều ảnh vào đây
+                    Drag and drop images here
                 </Typography>
                 <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{ mb: 1 }}
                 >
-                    Hoặc click để chọn nhiều ảnh
+                    Or click to select multiple images
                 </Typography>
                 <Button
                     variant="contained"
@@ -109,7 +109,7 @@ const BatchFileUploader = ({ onFilesSelect, disabled = false }) => {
                     }}
                     startIcon={<CloudUpload />}
                 >
-                    Chọn files
+                    Select files
                 </Button>
             </Stack>
         </Paper>
