@@ -77,13 +77,13 @@ const benefitsList = [
 
 const testimonials = [
     {
-        name: 'Lisa Johnson',
+        name: 'Lê Văn Huy',
         company: 'Marketing Expert',
         avatar: '/testimonial2.jpg',
         text: 'The accuracy of emotion detection has helped us create better targeting strategies.',
     },
     {
-        name: 'David Chen',
+        name: 'Nguyễn Văn An',
         company: 'Research Lab',
         avatar: '/testimonial3.jpg',
         text: 'As a researcher, I appreciate the detailed emotional analysis this platform provides.',
@@ -95,14 +95,14 @@ export default function Home() {
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isTablet = useMediaQuery(theme.breakpoints.down('md'));
     const [typedText, setTypedText] = useState('');
-    const fullText = "Intelligent";
-    
+    const fullText = 'Intelligent';
+
     useEffect(() => {
         let typingTimeout;
         let delay = 150;
         let currentIndex = 0;
         let isErasing = false;
-        
+
         const typeWriter = () => {
             // When typing forward
             if (!isErasing) {
@@ -115,7 +115,7 @@ export default function Home() {
                     isErasing = true;
                     typingTimeout = setTimeout(typeWriter, 1500);
                 }
-            } 
+            }
             // When erasing
             else {
                 if (currentIndex > 0) {
@@ -129,10 +129,10 @@ export default function Home() {
                 }
             }
         };
-        
+
         // Start the typing effect
         typingTimeout = setTimeout(typeWriter, 500);
-        
+
         return () => clearTimeout(typingTimeout);
     }, []);
 
@@ -230,6 +230,7 @@ export default function Home() {
                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
+                            mr: 2,
                         }}
                     >
                         Discover
@@ -239,12 +240,18 @@ export default function Home() {
                                 display: 'inline-block',
                                 position: 'relative',
                                 mx: 1,
-                                minWidth: isMobile ? '120px' : isTablet ? '180px' : '220px',
+                                minWidth: isMobile
+                                    ? '120px'
+                                    : isTablet
+                                      ? '180px'
+                                      : '220px',
                             }}
                         >
                             <Typography
                                 component="span"
-                                variant={isMobile ? 'h3' : isTablet ? 'h2' : 'h1'}
+                                variant={
+                                    isMobile ? 'h3' : isTablet ? 'h2' : 'h1'
+                                }
                                 fontWeight="bold"
                                 sx={{
                                     display: 'inline',
@@ -254,9 +261,9 @@ export default function Home() {
                                 }}
                             >
                                 {typedText}
-                                <Box 
-                                    component="span" 
-                                    sx={{ 
+                                <Box
+                                    component="span"
+                                    sx={{
                                         display: 'inline-block',
                                         width: '3px',
                                         height: '1em',
@@ -279,8 +286,26 @@ export default function Home() {
                                 }}
                             />
                         </Box>
+                    </Typography>
+                    <Typography
+                        component={motion.h1}
+                        variant={isMobile ? 'h3' : isTablet ? 'h2' : 'h1'}
+                        fontWeight="bold"
+                        gutterBottom
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        sx={{
+                            lineHeight: 1.2,
+                            mb: { xs: 2, md: 3 },
+                            background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                        }}
+                    >
                         Emotions
                     </Typography>
+
                     <Typography
                         variant={isMobile ? 'body1' : 'h5'}
                         color="text.secondary"
@@ -575,7 +600,12 @@ export default function Home() {
                     <Grid
                         container
                         spacing={3}
-                        sx={{ mb: 8 }}
+                        sx={{
+                            mb: 8,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            textAlign: 'center',
+                        }}
                         component={motion.div}
                         variants={containerVariants}
                         initial="hidden"
@@ -680,7 +710,6 @@ export default function Home() {
                     </MotionBox>
 
                     <Grid
-                        container
                         spacing={4}
                         justifyContent="center"
                         component={motion.div}
@@ -688,6 +717,11 @@ export default function Home() {
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, amount: 0.2 }}
+                        sx={{
+                            justifyContent: 'center',
+                            margin: '0 auto',
+                            gap: 4,
+                        }}
                     >
                         {testimonials.map((testimonial, index) => (
                             <Grid item xs={12} sm={6} md={4} key={index}>
@@ -707,6 +741,7 @@ export default function Home() {
                                         height: '100%',
                                         borderRadius: 4,
                                         border: 1,
+                                        marginBottom: 3,
                                         borderColor: 'divider',
                                         position: 'relative',
                                         overflow: 'hidden',

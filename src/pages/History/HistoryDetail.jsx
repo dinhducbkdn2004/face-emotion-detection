@@ -37,7 +37,7 @@ import {
 } from '../../services/emotionService';
 import { format } from 'date-fns';
 
-// Map cảm xúc với màu sắc
+// Map emotions to colors
 const emotionColors = {
     happy: '#4caf50',
     sad: '#5c6bc0',
@@ -61,7 +61,7 @@ const HistoryDetail = () => {
     );
     const [deleteDetection, , deleteLoading] = useApi(deleteEmotionDetection, {
         showSuccessToast: true,
-        successMessage: 'Đã xóa kết quả phát hiện thành công',
+        successMessage: 'Detection result deleted successfully',
         onSuccess: () => {
             navigate('/history');
         },
@@ -73,12 +73,14 @@ const HistoryDetail = () => {
 
     const handleDelete = async () => {
         if (
-            window.confirm('Bạn có chắc chắn muốn xóa kết quả phát hiện này?')
+            window.confirm(
+                'Are you sure you want to delete this detection result?'
+            )
         ) {
             try {
                 await deleteDetection(id);
             } catch (error) {
-                console.error('Lỗi khi xóa kết quả phát hiện:', error);
+                console.error('Error deleting detection result:', error);
             }
         }
     };
@@ -177,7 +179,7 @@ const HistoryDetail = () => {
         if (!detectionData?.detection_results?.face_detected) {
             return (
                 <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
-                    Không phát hiện khuôn mặt trong ảnh này
+                    No faces detected in this image
                 </Alert>
             );
         }
@@ -186,7 +188,7 @@ const HistoryDetail = () => {
             <Grid container spacing={2}>
                 {detectionData.detection_results.faces.map(
                     (face, faceIndex) => {
-                        // Lấy cảm xúc với điểm cao nhất
+                        // Get emotion with highest score
                         const primaryEmotion = face.emotions[0];
                         const primaryEmotionColor =
                             emotionColors[primaryEmotion.emotion] ||
@@ -230,7 +232,7 @@ const HistoryDetail = () => {
                                                     fontWeight="bold"
                                                     variant="subtitle1"
                                                 >
-                                                    Khuôn mặt #{faceIndex + 1}
+                                                    Face #{faceIndex + 1}
                                                 </Typography>
                                                 <Chip
                                                     label={`${primaryEmotion.emotion.charAt(0).toUpperCase() + primaryEmotion.emotion.slice(1)} (${primaryEmotion.percentage.toFixed(1)}%)`}
@@ -397,7 +399,7 @@ const HistoryDetail = () => {
                         }}
                     >
                         <HomeIcon sx={{ mr: 0.5, fontSize: 20 }} />
-                        {!isMobile && 'Trang chủ'}
+                        {!isMobile && 'Home'}
                     </Link>
                     <Link
                         underline="hover"
@@ -410,7 +412,7 @@ const HistoryDetail = () => {
                         }}
                     >
                         <HistoryIcon sx={{ mr: 0.5, fontSize: 20 }} />
-                        Lịch sử
+                        History
                     </Link>
                     <Typography
                         color="text.primary"
@@ -421,7 +423,7 @@ const HistoryDetail = () => {
                         }}
                     >
                         <MoodIcon sx={{ mr: 0.5, fontSize: 20 }} />
-                        Chi tiết phát hiện
+                        Detection Details
                     </Typography>
                 </Breadcrumbs>
 
@@ -435,7 +437,7 @@ const HistoryDetail = () => {
                             mb: 2,
                         }}
                     >
-                        Không thể tải dữ liệu chi tiết. Vui lòng thử lại.
+                        Unable to load details. Please try again.
                     </Alert>
                 ) : detectionData ? (
                     <>
@@ -499,7 +501,7 @@ const HistoryDetail = () => {
                                             variant="body2"
                                             color="text.secondary"
                                         >
-                                            Thời gian phát hiện:
+                                            Detection Time:
                                         </Typography>
                                     </Box>
                                     <Typography
@@ -524,7 +526,7 @@ const HistoryDetail = () => {
                                         textTransform: 'none',
                                     }}
                                 >
-                                    Xóa kết quả phát hiện
+                                    Delete Detection
                                 </Button>
                             </Grid>
 
@@ -535,7 +537,7 @@ const HistoryDetail = () => {
                                     fontWeight="bold"
                                     sx={{ mb: 2 }}
                                 >
-                                    Kết quả phát hiện cảm xúc
+                                    Emotion Detection Results
                                 </Typography>
 
                                 {detectionData.detection_results && (
@@ -553,8 +555,8 @@ const HistoryDetail = () => {
                                             >
                                                 {detectionData.detection_results
                                                     .face_detected
-                                                    ? `Đã phát hiện ${detectionData.detection_results.faces.length} khuôn mặt`
-                                                    : 'Không phát hiện khuôn mặt nào'}
+                                                    ? `${detectionData.detection_results.faces.length} faces detected`
+                                                    : 'No faces detected'}
                                             </Typography>
                                         </Box>
 
@@ -580,7 +582,7 @@ const HistoryDetail = () => {
                                     textTransform: 'none',
                                 }}
                             >
-                                Quay lại danh sách
+                                Back to List
                             </Button>
                         </Box>
                     </>

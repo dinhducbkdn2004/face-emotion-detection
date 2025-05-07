@@ -40,7 +40,10 @@ function App() {
         <Box
             sx={{
                 minHeight: '100vh',
-                bgcolor: 'background.default',
+                background: (theme) =>
+                    theme.palette.mode === 'dark'
+                        ? 'linear-gradient(to bottom, #121212, #1e1e1e)'
+                        : 'linear-gradient(to bottom, #f9fafb, #f5f5f5)',
                 color: 'text.primary',
             }}
         >

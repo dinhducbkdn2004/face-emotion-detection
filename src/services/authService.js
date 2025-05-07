@@ -303,6 +303,7 @@ export const verifyTokenWithBackend = async () => {
 
             // Gửi yêu cầu xác thực
             console.log('Gửi ID token đến server...');
+            console.log('ID token:', idToken);
             const response = await apiClient.post('/auth/verify-token', {
                 id_token: idToken,
             });

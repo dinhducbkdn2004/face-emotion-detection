@@ -12,13 +12,13 @@ import { Delete, PhotoLibrary } from '@mui/icons-material';
 import BatchFileItem from './BatchFileItem';
 
 /**
- * Component hiển thị danh sách các file đã chọn để xử lý batch
- * @param {Object} props - Props của component
- * @param {Array} props.files - Danh sách các file
- * @param {Array} props.results - Kết quả xử lý (nếu có)
- * @param {Function} props.onRemoveFile - Callback khi xóa một file
- * @param {Function} props.onClearFiles - Callback khi xóa tất cả files
- * @param {boolean} props.isProcessing - Đang trong quá trình xử lý
+ * Component to display list of selected files for batch processing
+ * @param {Object} props - Component props
+ * @param {Array} props.files - List of files
+ * @param {Array} props.results - Processing results (if any)
+ * @param {Function} props.onRemoveFile - Callback when removing a file
+ * @param {Function} props.onClearFiles - Callback when clearing all files
+ * @param {boolean} props.isProcessing - Whether batch processing is in progress
  */
 const BatchFileList = ({
     files = [],
@@ -29,16 +29,16 @@ const BatchFileList = ({
 }) => {
     const theme = useTheme();
 
-    // Không hiển thị gì nếu không có file
+    // Don't display anything if there are no files
     if (!files.length) {
         return null;
     }
 
-    // Lấy trạng thái xử lý cho từng file
+    // Get processing status for each file
     const getFileStatus = (file, index) => {
-        // Nếu đang xử lý batch
+        // If batch processing is in progress
         if (isProcessing) {
-            // Kiểm tra xem file có trong kết quả không
+            // Check if file is in results
             const foundResult = results.find((r) => r.filename === file.name);
 
             if (foundResult) {
@@ -76,7 +76,7 @@ const BatchFileList = ({
                         sx={{ mr: 1 }}
                     />
                     <Typography variant="subtitle1" fontWeight="medium">
-                        Danh sách file ({files.length})
+                        File List ({files.length})
                     </Typography>
                 </Box>
                 <Button
@@ -87,7 +87,7 @@ const BatchFileList = ({
                     onClick={onClearFiles}
                     disabled={isProcessing}
                 >
-                    Xóa tất cả
+                    Clear All
                 </Button>
             </Box>
 
@@ -107,13 +107,13 @@ const BatchFileList = ({
             {files.length > 5 && (
                 <Box sx={{ mt: 2, textAlign: 'center' }}>
                     <Typography variant="caption" color="text.secondary">
-                        {files.length} files được chọn (
+                        {files.length} files selected (
                         {
                             files.filter(
                                 (f) => getFileStatus(f) === 'completed'
                             ).length
                         }{' '}
-                        hoàn thành)
+                        completed)
                     </Typography>
                 </Box>
             )}

@@ -1,26 +1,28 @@
 import { useState } from 'react';
 import {
     Box,
-    Grid,
     Typography,
     Alert,
-    Tooltip,
     useTheme,
     useMediaQuery,
-    Zoom,
+    Chip,
+    Paper,
+    Fade,
 } from '@mui/material';
-import { InfoOutlined } from '@mui/icons-material';
-import EmotionResultCard from './EmotionResultCard';
+import { InfoOutlined, Face as FaceIcon } from '@mui/icons-material';
 import EmotionResultSkeleton from './EmotionResultSkeleton';
+import FaceBoxOverlay from './FaceBoxOverlay';
+import EmotionResultsList from './EmotionResultsList';
 
 /**
- * Component hiển thị kết quả phân tích cảm xúc
- * @param {Object} props - Props của component
- * @param {Object} props.result - Kết quả phát hiện cảm xúc
- * @param {boolean} props.loading - Trạng thái đang tải
- * @param {Object} props.error - Lỗi (nếu có)
+ * Component to display emotion analysis results
+ * @param {Object} props - Component props
+ * @param {Object} props.result - Emotion detection result
+ * @param {boolean} props.loading - Loading state
+ * @param {Object} props.error - Error (if any)
+ * @param {string} props.previewUrl - Preview image URL
  */
-const EmotionResults = ({ result, loading, error }) => {
+const EmotionResults = ({ result, loading, error, previewUrl }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -30,8 +32,16 @@ const EmotionResults = ({ result, loading, error }) => {
 
     if (error) {
         return (
-            <Alert severity="error" sx={{ borderRadius: 2, mt: 2 }}>
-                Có lỗi xảy ra khi phân tích cảm xúc. Vui lòng thử lại.
+            <Alert
+                severity="error"
+                sx={{
+                    borderRadius: 3,
+                    mt: 2,
+                    boxShadow: '0 4px 20px rgba(255,0,0,0.1)',
+                }}
+                variant="filled"
+            >
+                An error occurred while analyzing emotions. Please try again.
             </Alert>
         );
     }
@@ -43,62 +53,103 @@ const EmotionResults = ({ result, loading, error }) => {
     // Trường hợp không phát hiện khuôn mặt
     if (!result.detection_results.face_detected) {
         return (
-            <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
-                Không phát hiện khuôn mặt trong ảnh này
+            <Alert
+                severity="info"
+                sx={{
+                    borderRadius: 3,
+                    mt: 2,
+                    boxShadow: '0 4px 20px rgba(0,0,255,0.1)',
+                }}
+                variant="filled"
+            >
+                No faces detected in this image
             </Alert>
         );
     }
 
     return (
         <Box>
-            <Box
+            <Paper
+                elevation={0}
                 sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    mb: 2,
+                    p: 3,
+                    mb: 3,
+                    borderRadius: 3,
+                    background:
+                        theme.palette.mode === 'dark'
+                            ? 'linear-gradient(145deg, #1a1a1a, #2d2d2d)'
+                            : 'linear-gradient(145deg, #ffffff, #f8f9fa)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                 }}
             >
-                <Typography variant="body1" fontWeight="medium">
-                    Đã phát hiện {result.detection_results.faces.length} khuôn mặt
-                </Typography>
-                <Tooltip title="Kết quả đã được phân tích dựa trên các đặc điểm khuôn mặt">
-                    <InfoOutlined
-                        fontSize="small"
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 2,
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <FaceIcon
+                            sx={{
+                                mr: 1,
+                                color: theme.palette.primary.main,
+                                fontSize: 28,
+                            }}
+                        />
+                        <Typography variant="h6" fontWeight="bold">
+                            Detection Results
+                        </Typography>
+                    </Box>
+
+                    <Chip
+                        icon={<InfoOutlined />}
+                        label={`${result.detection_results.faces.length} face(s) detected`}
+                        color="primary"
+                        variant="outlined"
                         sx={{
-                            ml: 1,
-                            color: 'text.secondary',
-                            cursor: 'help',
+                            borderRadius: 3,
+                            px: 1,
                         }}
                     />
-                </Tooltip>
-            </Box>
+                </Box>
+            </Paper>
 
-            <Grid container spacing={2}>
-                {result.detection_results.faces.map((face, faceIndex) => (
-                    <Grid
-                        item
-                        xs={12}
-                        sm={isMobile ? 12 : 6}
-                        key={faceIndex}
+            {/* Preview image with bounding boxes */}
+            {previewUrl && (
+                <Fade in={true} timeout={500}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            mb: 3,
+                            overflow: 'hidden',
+                            borderRadius: 3,
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                        }}
                     >
-                        <Zoom
-                            in={true}
-                            style={{
-                                transitionDelay: `${100 * faceIndex}ms`,
-                            }}
-                        >
-                            <Box>
-                                <EmotionResultCard 
-                                    face={face} 
-                                    faceIndex={faceIndex} 
-                                />
-                            </Box>
-                        </Zoom>
-                    </Grid>
-                ))}
-            </Grid>
+                        <FaceBoxOverlay
+                            imageUrl={previewUrl}
+                            faces={result.detection_results.faces}
+                        />
+                    </Paper>
+                </Fade>
+            )}
+
+            {/* Results list */}
+            <Paper
+                elevation={0}
+                sx={{
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                }}
+            >
+                <EmotionResultsList faces={result.detection_results.faces} />
+            </Paper>
         </Box>
     );
 };
 
-export default EmotionResults; 
+export default EmotionResults;
