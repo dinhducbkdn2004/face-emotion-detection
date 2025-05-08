@@ -1,0 +1,25 @@
+<svg width="500" height="500" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Hình tròn nền -->
+  <circle cx="250" cy="250" r="200" fill="#f0f0f0" />
+  
+  <!-- Chữ D - đại diện cho Đức -->
+  <path d="M150 100C150 100 200 100 250 100C300 100 350 125 375 175C400 225 400 275 375 325C350 375 300 400 250 400C200 400 150 400 150 400L150 100Z" 
+        stroke="#3498db" 
+        fill="#3498db" 
+        fill-opacity="0.6" 
+        stroke-width="15" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+  
+  <!-- Chữ B - đại diện cho Bảo -->
+  <path d="M150 100L150 400C150 400 200 400 225 400C275 400 300 375 300 350C300 325 275 300 225 300L150 300M150 300C150 300 200 300 225 300C275 300 300 275 300 250C300 225 275 200 225 200C200 200 150 200 150 200" 
+        stroke="#e74c3c" 
+        fill="#e74c3c" 
+        fill-opacity="0.6" 
+        stroke-width="15" 
+        stroke-linecap="round" 
+        stroke-linejoin="round" />
+  
+  <!-- Hiệu ứng đường viền sáng -->
+  <circle cx="250" cy="250" r="195" stroke="#2c3e50" stroke-width="2" fill="none" />
+</svg> 

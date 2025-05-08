@@ -132,6 +132,7 @@ const EmotionResults = ({ result, loading, error, previewUrl }) => {
                         <FaceBoxOverlay
                             imageUrl={previewUrl}
                             faces={result.detection_results.faces}
+                            
                         />
                     </Paper>
                 </Fade>

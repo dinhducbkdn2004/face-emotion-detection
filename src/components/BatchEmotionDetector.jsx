@@ -99,15 +99,15 @@ const BatchEmotionDetector = () => {
     // Validate file
     const validateFile = (file) => {
         // Check file size (limit 5MB)
-                if (file.size > 5 * 1024 * 1024) {
+        if (file.size > 5 * 1024 * 1024) {
             return {
                 valid: false,
                 error: `File "${file.name}" exceeds the size limit (5MB)`,
             };
-                }
+        }
 
         // Check file format
-                if (!file.type.match('image.*')) {
+        if (!file.type.match('image.*')) {
             return {
                 valid: false,
                 error: `File "${file.name}" is not an image`,
@@ -301,8 +301,8 @@ const BatchEmotionDetector = () => {
             // Gọi API để xử lý batch
             if (useSSE) {
                 try {
-            await detectEmotionBatch(selectedFiles, handleNewResult);
-        } catch (error) {
+                    await detectEmotionBatch(selectedFiles, handleNewResult);
+                } catch (error) {
                     console.error(
                         'SSE not available, switching to fallback:',
                         error
@@ -363,8 +363,8 @@ const BatchEmotionDetector = () => {
                     statusIcon = <CircularProgress size={16} />;
                     statusColor = 'primary';
                     statusText = 'Processing';
-            }
-        } else {
+                }
+            } else {
                 statusIcon = <CircularProgress size={16} />;
                 statusColor = 'primary';
                 statusText = 'Processing';
@@ -414,19 +414,19 @@ const BatchEmotionDetector = () => {
                                 }}
                             />
                         ) : (
-                <Box
-                    component="img"
-                    src={thumbUrl}
-                    alt={file.name}
-                    sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 1,
-                                    objectFit: 'cover',
-                        border: '1px solid',
-                        borderColor: 'divider',
-                    }}
-                />
+                            <Box
+                                component="img"
+                                src={thumbUrl}
+                                alt={file.name}
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 1,
+                                    objectFit: 'contain',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            />
                         )}
                         {isProcessing && !result?.status && (
                             <CircularProgress
@@ -442,16 +442,16 @@ const BatchEmotionDetector = () => {
                         )}
                     </Box>
 
-                <ListItemText
-                    primary={file.name}
-                    secondary={`${(file.size / 1024).toFixed(1)} KB`}
-                    primaryTypographyProps={{
+                    <ListItemText
+                        primary={file.name}
+                        secondary={`${(file.size / 1024).toFixed(1)} KB`}
+                        primaryTypographyProps={{
                             variant: 'body2',
                             fontWeight: 'medium',
                             sx: {
-                            overflow: 'hidden',
+                                overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
+                                whiteSpace: 'nowrap',
                             },
                         }}
                         secondaryTypographyProps={{
@@ -468,11 +468,11 @@ const BatchEmotionDetector = () => {
                         }}
                     >
                         {statusText && (
-                <Chip
-                    icon={statusIcon}
-                    label={statusText}
-                    size="small"
-                    color={statusColor}
+                            <Chip
+                                icon={statusIcon}
+                                label={statusText}
+                                size="small"
+                                color={statusColor}
                                 sx={{ mr: 1 }}
                             />
                         )}
@@ -498,22 +498,22 @@ const BatchEmotionDetector = () => {
         const progress =
             selectedFiles.length > 0
                 ? Math.round((processedCount / selectedFiles.length) * 100)
-                            : 0;
+                : 0;
 
-                        return (
+        return (
             <Box sx={{ mt: 2, mb: 3 }}>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
+                <Box
+                    sx={{
+                        display: 'flex',
                         justifyContent: 'space-between',
-                                            alignItems: 'center',
+                        alignItems: 'center',
                         mb: 1,
                     }}
                 >
                     <Typography variant="subtitle1">
                         Processing {processedCount}/{selectedFiles.length}{' '}
                         images
-                                        </Typography>
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                         {progress}%
                     </Typography>
@@ -523,7 +523,7 @@ const BatchEmotionDetector = () => {
                     value={progress}
                     sx={{ height: 8, borderRadius: 4 }}
                 />
-                                    </Box>
+            </Box>
         );
     };
 
@@ -531,11 +531,11 @@ const BatchEmotionDetector = () => {
     const renderResults = () => {
         if (!results.length) return null;
 
-                                                        return (
+        return (
             <Box sx={{ mt: 3 }}>
                 <Paper
                     elevation={0}
-                                                                    sx={{
+                    sx={{
                         p: 3,
                         borderRadius: 3,
                         background:
@@ -545,8 +545,8 @@ const BatchEmotionDetector = () => {
                         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                     }}
                 >
-                                                                        <Box
-                                                                            sx={{
+                    <Box
+                        sx={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
@@ -556,18 +556,11 @@ const BatchEmotionDetector = () => {
                         }}
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <PhotoLibrary
-                                                                                sx={{
-                                                                                    mr: 1,
-                                    color: theme.palette.primary.main,
-                                    fontSize: 28,
-                                }}
-                            />
                             <Typography variant="h6" fontWeight="bold">
                                 Detection Results ({processedCount}/
                                 {selectedFiles.length})
-                                                                            </Typography>
-                                                                        </Box>
+                            </Typography>
+                        </Box>
 
                         {isProcessing && (
                             <Chip
@@ -577,10 +570,10 @@ const BatchEmotionDetector = () => {
                                 sx={{ borderRadius: 3 }}
                             />
                         )}
-                                            </Box>
+                    </Box>
 
                     <BatchResultsList results={results} />
-                                </Paper>
+                </Paper>
             </Box>
         );
     };
@@ -588,38 +581,38 @@ const BatchEmotionDetector = () => {
     return (
         <Box>
             {/* Phần tải lên */}
-                <Paper
+            <Paper
                 variant="outlined"
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
-                    sx={{
-                        borderRadius: 2,
+                sx={{
+                    borderRadius: 2,
                     borderStyle: 'dashed',
                     borderWidth: '2px',
-                                    borderColor: dragActive
+                    borderColor: dragActive
                         ? theme.palette.primary.main
                         : theme.palette.divider,
                     bgcolor: dragActive
                         ? theme.palette.action.hover
                         : 'background.paper',
                     p: 3,
-                                    cursor: 'pointer',
+                    cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     textAlign: 'center',
                     position: 'relative',
-                                    '&:hover': {
+                    '&:hover': {
                         bgcolor: theme.palette.action.hover,
                     },
                 }}
-                            >
-                                <input
-                                    type="file"
+            >
+                <input
+                    type="file"
                     id="file-upload"
-                                    multiple
+                    multiple
                     accept="image/*"
-                                    onChange={handleFileChange}
+                    onChange={handleFileChange}
                     style={{ display: 'none' }}
                 />
 
@@ -628,7 +621,7 @@ const BatchEmotionDetector = () => {
                     style={{ width: '100%', cursor: 'pointer' }}
                 >
                     <Box
-                                    sx={{
+                        sx={{
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
@@ -693,32 +686,32 @@ const BatchEmotionDetector = () => {
                 </label>
             </Paper>
 
-                        {/* Hiển thị danh sách files đã chọn */}
-                        {selectedFiles.length > 0 && (
+            {/* Hiển thị danh sách files đã chọn */}
+            {selectedFiles.length > 0 && (
                 <Paper variant="outlined" sx={{ p: 2, mt: 2, borderRadius: 2 }}>
                     {/* Files đã chọn */}
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        mb: 2,
-                                    }}
-                                >
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 2,
+                        }}
+                    >
                         <Typography variant="subtitle1" fontWeight="medium">
                             {selectedFiles.length} files selected
                         </Typography>
-                                            <Button
-                                                size="small"
-                                                color="error"
-                                                variant="outlined"
+                        <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
                             onClick={handleClearFiles}
                             startIcon={<Delete />}
                             disabled={isProcessing}
-                                            >
+                        >
                             Clear All
-                                            </Button>
-                                </Box>
+                        </Button>
+                    </Box>
 
                     {/* Danh sách files */}
                     <List sx={{ maxHeight: '300px', overflow: 'auto' }}>
@@ -728,10 +721,10 @@ const BatchEmotionDetector = () => {
                     </List>
 
                     {/* Buttons */}
-                                <Box
-                                    sx={{
+                    <Box
+                        sx={{
                             mt: 2,
-                                        display: 'flex',
+                            display: 'flex',
                             gap: 2,
                             justifyContent: 'flex-end',
                         }}
@@ -769,7 +762,7 @@ const BatchEmotionDetector = () => {
             {isProcessing && <BatchProcessingStatus />}
 
             {/* Hiển thị kết quả */}
-                            {renderResults()}
+            {renderResults()}
 
             {/* Hiển thị lỗi nếu có */}
             {error && (

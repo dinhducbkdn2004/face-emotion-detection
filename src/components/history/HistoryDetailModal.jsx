@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Modal,
     Box,
@@ -63,6 +63,23 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
     const [expandedFaces, setExpandedFaces] = useState({});
     // State for delete confirmation
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    // State for highlighted face
+    const [highlightedFace, setHighlightedFace] = useState(null);
+
+    // Ref for results container - để quản lý scroll
+    const resultsContainerRef = useRef(null);
+
+    // Refs và states cho việc tính toán bounding box
+    const imageRef = useRef(null);
+    const containerRef = useRef(null);
+    const [imageDimensions, setImageDimensions] = useState({
+        width: 0,
+        height: 0,
+    });
+    const [containerDimensions, setContainerDimensions] = useState({
+        width: 0,
+        height: 0,
+    });
 
     // Use API hook to fetch detailed data
     const [fetchDetail, detailData, loading, error] = useApi(
@@ -74,8 +91,50 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
         if (open && item?.detection_id) {
             fetchDetail(item.detection_id);
             setExpandedFaces({}); // Reset expanded state
+            setHighlightedFace(null); // Reset highlighted face
         }
     }, [open, item?.detection_id, fetchDetail]);
+
+    // Scroll to highlighted face
+    useEffect(() => {
+        // Không cuộn tự động khi highlight thay đổi
+    }, [highlightedFace]);
+
+    // Cập nhật kích thước ảnh và container khi ảnh được tải hoặc kích thước thay đổi
+    useEffect(() => {
+        if (!detailData?.image_url) return;
+
+        const updateDimensions = () => {
+            if (imageRef.current && containerRef.current) {
+                // Kích thước thực tế của ảnh đã được render
+                setImageDimensions({
+                    width: imageRef.current.offsetWidth,
+                    height: imageRef.current.offsetHeight,
+                });
+
+                // Kích thước của container
+                setContainerDimensions({
+                    width: containerRef.current.offsetWidth,
+                    height: containerRef.current.offsetHeight,
+                });
+            }
+        };
+
+        // Cập nhật kích thước khi ảnh được tải
+        if (imageRef.current) {
+            imageRef.current.onload = updateDimensions;
+        }
+
+        // Cập nhật ngay lập tức nếu ảnh đã được tải
+        updateDimensions();
+
+        // Thêm listener cho sự kiện resize
+        window.addEventListener('resize', updateDimensions);
+
+        return () => {
+            window.removeEventListener('resize', updateDimensions);
+        };
+    }, [detailData?.image_url]);
 
     // Handle delete confirmation
     const handleDeleteClick = () => {
@@ -99,6 +158,29 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
             ...prev,
             [faceIndex]: !prev[faceIndex],
         }));
+    };
+
+    // Highlight face on hover
+    const handleFaceHover = (faceIndex) => {
+        setHighlightedFace(faceIndex);
+    };
+
+    const handleFaceLeave = () => {
+        setHighlightedFace(null);
+    };
+
+    // Hàm mới để cuộn đến kết quả
+    const handleScrollToFace = (faceIndex) => {
+        if (resultsContainerRef.current) {
+            const listItems =
+                resultsContainerRef.current.querySelectorAll('.face-list-item');
+            if (listItems && listItems[faceIndex]) {
+                listItems[faceIndex].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                });
+            }
+        }
     };
 
     // Render skeleton loading
@@ -169,6 +251,226 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
         </Grid>
     );
 
+    // Render image with face boxes
+    const renderImageWithFaces = () => {
+        if (!detailData?.image_url || !detailData?.detection_results?.faces) {
+            return (
+                <Box
+                    sx={{
+                        flex: { xs: 'none', md: 1 },
+                        maxWidth: { xs: '100%', md: '50%' },
+                        position: 'relative',
+                        borderRadius: 3,
+                        overflow: 'hidden',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                        height: { xs: 250, sm: 300, md: 350 },
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        bgcolor: 'black',
+                    }}
+                >
+                    {detailData?.image_url ? (
+                        <Box
+                            component="img"
+                            src={detailData.image_url}
+                            alt="Detection result"
+                            sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                            }}
+                        />
+                    ) : (
+                        <ImageNotSupported
+                            sx={{
+                                fontSize: 60,
+                                color: 'text.secondary',
+                                opacity: 0.5,
+                            }}
+                        />
+                    )}
+                </Box>
+            );
+        }
+
+        const faces = detailData.detection_results.faces;
+
+        // Tính toán tỷ lệ thu phóng
+        const calculateScale = () => {
+            if (imageDimensions.width === 0 || containerDimensions.width === 0)
+                return 1;
+
+            // Tỷ lệ dựa trên chiều rộng và chiều cao
+            const scaleX = imageDimensions.width / containerDimensions.width;
+            const scaleY = imageDimensions.height / containerDimensions.height;
+
+            return Math.min(scaleX, scaleY);
+        };
+
+        return (
+            <Box
+                sx={{
+                    flex: { xs: 'none', md: 1 },
+                    maxWidth: { xs: '100%', md: '50%' },
+                    position: 'relative',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    height: { xs: 250, sm: 300, md: 350 },
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    bgcolor: 'black',
+                }}
+                ref={containerRef}
+            >
+                <Box
+                    sx={{
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box
+                        component="img"
+                        ref={imageRef}
+                        src={detailData.image_url}
+                        alt="Detection result"
+                        sx={{
+                            maxWidth: '100%',
+                            maxHeight: '100%',
+                            objectFit: 'cover',
+                        }}
+                    />
+
+                    {/* Face bounding boxes */}
+                    {imageDimensions.width > 0 &&
+                        faces.map((face, index) => {
+                            // Extract box coordinates and calculate dimensions
+                            const [x, y, width, height] = face.box;
+                            // Determine primary emotion color
+                            const primaryEmotion = face.emotions[0];
+                            const boxColor = '#2196f3'; // Màu xanh dương đồng nhất như trong hình
+
+                            // Tính toán vị trí dựa trên tỷ lệ thực tế của ảnh
+                            const imageWidth = imageDimensions.width;
+                            const imageHeight = imageDimensions.height;
+
+                            // Tính offset từ cạnh container đến cạnh ảnh
+                            const offsetLeft =
+                                (containerDimensions.width - imageWidth) / 2;
+                            const offsetTop =
+                                (containerDimensions.height - imageHeight) / 2;
+
+                            // Tính tỷ lệ thu phóng của ảnh so với kích thước gốc
+                            // Giả sử kích thước gốc của ảnh là 640x480
+                            // Điều chỉnh các giá trị này dựa trên kích thước thực tế của ảnh gốc
+                            const originalWidth = 640; // Điều chỉnh dựa trên kích thước thực tế của ảnh gốc
+                            const originalHeight = 480; // Điều chỉnh dựa trên kích thước thực tế của ảnh gốc
+
+                            const scaleX = imageWidth / originalWidth;
+                            const scaleY = imageHeight / originalHeight;
+
+                            return (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        position: 'absolute',
+                                        left: `${offsetLeft + x * scaleX}px`,
+                                        top: `${offsetTop + y * scaleY}px`,
+                                        width: `${width * scaleX}px`,
+                                        height: `${height * scaleY}px`,
+                                        border: `2px solid ${boxColor}`,
+                                        borderRadius: '4px',
+                                        transition: 'all 0.3s ease',
+                                        cursor: 'pointer',
+                                        zIndex:
+                                            highlightedFace === index ? 10 : 1,
+                                        '&:hover': {
+                                            boxShadow: `0 0 0 2px ${boxColor}, 0 0 10px ${boxColor}`,
+                                        },
+                                    }}
+                                    onClick={() => {
+                                        handleFaceClick(index);
+                                        handleScrollToFace(index);
+                                    }}
+                                    onMouseEnter={() => handleFaceHover(index)}
+                                    onMouseLeave={handleFaceLeave}
+                                >
+                                    {/* Số thứ tự trên góc bounding box */}
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            top: '-14px',
+                                            left: '2px',
+                                            minWidth: '24px',
+                                            height: '24px',
+                                            backgroundColor: boxColor,
+                                            color: '#fff',
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '12px',
+                                            fontWeight: 'bold',
+                                            boxShadow:
+                                                '0 2px 5px rgba(0,0,0,0.2)',
+                                            zIndex: 2,
+                                        }}
+                                    >
+                                        {index + 1}
+                                    </Box>
+
+                                    {/* Thông tin cảm xúc chỉ hiện khi hover hoặc selected */}
+                                    {highlightedFace === index && (
+                                        <Fade in={highlightedFace === index}>
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: `${height * scaleY + 5}px`,
+                                                    left: 0,
+                                                    backgroundColor:
+                                                        'rgba(0,0,0,0.75)',
+                                                    color: '#fff',
+                                                    padding: '4px 8px',
+                                                    borderRadius: '4px',
+                                                    fontSize: '12px',
+                                                    zIndex: 2,
+                                                    whiteSpace: 'nowrap',
+                                                    boxShadow:
+                                                        '0 2px 5px rgba(0,0,0,0.2)',
+                                                }}
+                                            >
+                                                {primaryEmotion.emotion
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    primaryEmotion.emotion.slice(
+                                                        1
+                                                    )}
+                                                :{' '}
+                                                {primaryEmotion.percentage.toFixed(
+                                                    1
+                                                )}
+                                                %
+                                            </Box>
+                                        </Fade>
+                                    )}
+                                </Box>
+                            );
+                        })}
+                </Box>
+            </Box>
+        );
+    };
+
     // Render emotion analysis results
     const renderEmotionResults = () => {
         if (!detailData?.detection_results?.face_detected) {
@@ -214,21 +516,27 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                     const isExpanded = expandedFaces[faceIndex] || false;
 
                     return (
-                        <Box key={faceIndex}>
+                        <Box key={faceIndex} className="face-list-item">
                             <ListItemButton
                                 onClick={() => handleFaceClick(faceIndex)}
+                                onMouseEnter={() => handleFaceHover(faceIndex)}
+                                onMouseLeave={handleFaceLeave}
                                 sx={{
                                     bgcolor:
-                                        theme.palette.mode === 'dark'
-                                            ? 'rgba(255,255,255,0.05)'
-                                            : 'rgba(0,0,0,0.02)',
+                                        highlightedFace === faceIndex
+                                            ? theme.palette.mode === 'dark'
+                                                ? 'rgba(255,255,255,0.1)'
+                                                : 'rgba(0,0,0,0.05)'
+                                            : theme.palette.mode === 'dark'
+                                              ? 'rgba(255,255,255,0.05)'
+                                              : 'rgba(0,0,0,0.02)',
                                     borderLeft: `4px solid ${primaryEmotionColor}`,
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
                                         bgcolor:
                                             theme.palette.mode === 'dark'
-                                                ? 'rgba(255,255,255,0.08)'
-                                                : 'rgba(0,0,0,0.04)',
+                                                ? 'rgba(255,255,255,0.1)'
+                                                : 'rgba(0,0,0,0.05)',
                                     },
                                 }}
                             >
@@ -407,6 +715,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                         height: '100%',
                         display: 'flex',
                         flexDirection: 'column',
+                        overflow: 'visible',
                     }}
                 >
                     {/* Header */}
@@ -489,7 +798,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                         <Box
                             sx={{
                                 flex: 1,
-                                overflow: 'hidden',
+                                overflow: 'visible',
                                 display: 'flex',
                                 flexDirection: 'column',
                             }}
@@ -502,45 +811,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                     mb: 3,
                                 }}
                             >
-                                {/* Image */}
-                                <Box
-                                    sx={{
-                                        flex: { xs: 'none', md: 1 },
-                                        maxWidth: { xs: '100%', md: '50%' },
-                                        position: 'relative',
-                                        borderRadius: 3,
-                                        overflow: 'hidden',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                                        height: { xs: 250, sm: 300, md: 350 },
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        bgcolor: 'black',
-                                    }}
-                                >
-                                    {detailData.image_url ? (
-                                        <Box
-                                            component="img"
-                                            src={detailData.image_url}
-                                            alt="Detection result"
-                                            sx={{
-                                                maxWidth: '100%',
-                                                maxHeight: '100%',
-                                                objectFit: 'contain',
-                                            }}
-                                        />
-                                    ) : (
-                                        <ImageNotSupported
-                                            sx={{
-                                                fontSize: 60,
-                                                color: 'text.secondary',
-                                                opacity: 0.5,
-                                            }}
-                                        />
-                                    )}
-                                </Box>
+                                {renderImageWithFaces()}
 
                                 {/* Info */}
                                 <Box sx={{ flex: 1 }}>
@@ -606,8 +877,41 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 </Box>
                             </Box>
 
-                            {/* Results */}
-                            <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
+                            {/* Results - add ref and improve scroll */}
+                            <Box
+                                ref={resultsContainerRef}
+                                sx={{
+                                    flex: 1,
+                                    overflow: 'auto',
+                                    pr: 1,
+                                    '&::-webkit-scrollbar': {
+                                        width: '8px',
+                                        borderRadius: '2px',
+                                    },
+                                    '&::-webkit-scrollbar-track': {
+                                        background: 'transparent',
+                                        margin: '2px 0',
+                                    },
+                                    '&::-webkit-scrollbar-thumb': {
+                                        background:
+                                            theme.palette.mode === 'dark'
+                                                ? 'rgba(255,255,255,0.2)'
+                                                : 'rgba(0,0,0,0.3)',
+                                        borderRadius: '4px',
+                                        border:
+                                            theme.palette.mode === 'dark'
+                                                ? '3px solid rgba(0,0,0,0.4)'
+                                                : '3px solid rgba(255,255,255,0.8)',
+                                        minHeight: '40px',
+                                        '&:hover': {
+                                            background:
+                                                theme.palette.mode === 'dark'
+                                                    ? 'rgba(255,255,255,0.3)'
+                                                    : 'rgba(0,0,0,0.5)',
+                                        },
+                                    },
+                                }}
+                            >
                                 <Typography
                                     variant={isMobile ? 'h6' : 'h5'}
                                     fontWeight="bold"
@@ -685,15 +989,41 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                             transform: 'translate(-50%, -50%)',
                             width: isSmall ? '95%' : '90%',
                             maxWidth: 1000,
-                            maxHeight: '90vh',
-                            height: '90vh',
+                            maxHeight: '95vh', // Increase from 90vh to 95vh
+                            height: '95vh', // Increase from 90vh to 95vh
                             bgcolor: 'background.paper',
                             borderRadius: 4,
                             boxShadow: theme.shadows[8],
                             p: { xs: 2, sm: 3, md: 4 },
-                            overflow: 'hidden',
+                            overflow: 'auto',
                             display: 'flex',
                             flexDirection: 'column',
+                            '&::-webkit-scrollbar': {
+                                width: '14px',
+                                borderRadius: '7px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'transparent',
+                                margin: '4px 0',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background:
+                                    theme.palette.mode === 'dark'
+                                        ? 'rgba(255,255,255,0.2)'
+                                        : 'rgba(0,0,0,0.3)',
+                                borderRadius: '7px',
+                                border:
+                                    theme.palette.mode === 'dark'
+                                        ? '3px solid rgba(0,0,0,0.4)'
+                                        : '3px solid rgba(255,255,255,0.8)',
+                                minHeight: '40px',
+                                '&:hover': {
+                                    background:
+                                        theme.palette.mode === 'dark'
+                                            ? 'rgba(255,255,255,0.3)'
+                                            : 'rgba(0,0,0,0.5)',
+                                },
+                            },
                         }}
                     >
                         {modalContent()}

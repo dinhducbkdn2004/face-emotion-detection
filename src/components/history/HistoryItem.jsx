@@ -51,7 +51,6 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                 borderColor: 'divider',
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                    transform: 'translateY(-4px)',
                     boxShadow: `0 4px 20px 0 ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.15)'}`,
                     borderColor: emotionColor,
                 },

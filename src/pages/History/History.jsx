@@ -11,7 +11,7 @@ import {
     TextField,
     Button,
     IconButton,
-    Pagination,
+    TablePagination,
     Stack,
     Divider,
     Chip,
@@ -29,12 +29,10 @@ import {
 } from '@mui/material';
 import {
     Refresh as RefreshIcon,
-    Search as SearchIcon,
     FilterAlt as FilterIcon,
     ViewList as ViewListIcon,
     ViewModule as ViewModuleIcon,
     CalendarMonth as CalendarIcon,
-    Clear as ClearIcon,
 } from '@mui/icons-material';
 
 // Date picker
@@ -48,6 +46,7 @@ import { deleteEmotionDetection } from '../../services/emotionService';
 import HistoryItem from '../../components/history/HistoryItem';
 import HistoryItemSkeleton from '../../components/history/HistoryItemSkeleton';
 import HistoryDetailModal from '../../components/history/HistoryDetailModal';
+import ConfirmDeleteModal from '../../components/history/ConfirmDeleteModal';
 import ToastService from '../../toasts/ToastService';
 
 const History = () => {
@@ -59,10 +58,10 @@ const History = () => {
     const [selectedItem, setSelectedItem] = useState(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
-    const [rowsPerPageOptions] = useState([12, 24, 36, 48]);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     // State for filters
-    const [searchInput, setSearchInput] = useState('');
     const [fromDateInput, setFromDateInput] = useState(null);
     const [toDateInput, setToDateInput] = useState(null);
 
@@ -79,16 +78,9 @@ const History = () => {
         handlePageChange,
         handleLimitChange,
         handleDateFilterChange,
-        handleKeywordChange,
     } = useHistoryData({
         initialLimit: 12,
     });
-
-    // Handle search form submission
-    const handleSearchSubmit = (e) => {
-        e.preventDefault();
-        handleKeywordChange(searchInput);
-    };
 
     // Handle date filter changes
     const applyDateFilter = () => {
@@ -97,44 +89,42 @@ const History = () => {
 
     // Clear all filters
     const clearAllFilters = () => {
-        setSearchInput('');
         setFromDateInput(null);
         setToDateInput(null);
-        handleKeywordChange('');
         handleDateFilterChange(null, null);
     };
 
-    // Handle delete detection result
+    const handleDeleteConfirmation = (detectionId) => {
+        setItemToDelete(detectionId);
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmOpen(false);
+        setItemToDelete(null);
+    };
+
     const handleDelete = useCallback(
         async (detectionId) => {
-            if (
-                window.confirm(
-                    'Are you sure you want to delete this detection result?'
-                )
-            ) {
-                try {
-                    await deleteEmotionDetection(detectionId);
-                    ToastService.success(
-                        'Detection result deleted successfully'
-                    );
-
-                    // Close modal if the viewed item is being deleted
-                    if (
-                        modalOpen &&
-                        selectedItem &&
-                        selectedItem.detection_id === detectionId
-                    ) {
-                        setModalOpen(false);
-                        setSelectedItem(null);
-                    }
-
-                    refresh(); // Refresh data after deletion
-                } catch (error) {
-                    console.error('Error when deleting:', error);
-                    ToastService.error(
-                        'Could not delete detection result. Please try again.'
-                    );
+            try {
+                await deleteEmotionDetection(detectionId);
+                // Close modal if the viewed item is being deleted
+                if (
+                    modalOpen &&
+                    selectedItem &&
+                    selectedItem.detection_id === detectionId
+                ) {
+                    setModalOpen(false);
+                    setSelectedItem(null);
                 }
+
+                refresh(); // Refresh data after deletion
+                setDeleteConfirmOpen(false);
+            } catch (error) {
+                console.error('Error when deleting:', error);
+                ToastService.error(
+                    'Could not delete detection result. Please try again.'
+                );
             }
         },
         [modalOpen, selectedItem, refresh]
@@ -195,7 +185,7 @@ const History = () => {
                     >
                         <HistoryItem
                             item={item}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteConfirmation}
                             onView={handleViewDetail}
                             viewMode={viewMode}
                         />
@@ -203,6 +193,18 @@ const History = () => {
                 ))}
             </Grid>
         );
+    };
+
+    // Xử lý thay đổi trang cho TablePagination
+    const handleChangePage = (event, newPage) => {
+        console.log('Chuyển trang:', newPage + 1);
+        handlePageChange(newPage + 1); // TablePagination sử dụng index bắt đầu từ 0
+    };
+
+    // Xử lý thay đổi số dòng mỗi trang
+    const handleChangeRowsPerPage = (event) => {
+        console.log('Thay đổi số dòng:', event.target.value);
+        handleLimitChange(parseInt(event.target.value, 10));
     };
 
     return (
@@ -260,7 +262,7 @@ const History = () => {
                         >
                             <Grid container spacing={2} alignItems="center">
                                 {/* Date filters */}
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid item xs={12} sm={6} md={4}>
                                     <DatePicker
                                         label="From Date"
                                         value={fromDateInput}
@@ -284,7 +286,7 @@ const History = () => {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} sm={6} md={3}>
+                                <Grid item xs={12} sm={6} md={4}>
                                     <DatePicker
                                         label="To Date"
                                         value={toDateInput}
@@ -308,61 +310,8 @@ const History = () => {
                                     />
                                 </Grid>
 
-                                {/* Search form */}
-                                <Grid item xs={12} md={4}>
-                                    <form
-                                        onSubmit={handleSearchSubmit}
-                                        style={{ width: '100%' }}
-                                    >
-                                        <TextField
-                                            fullWidth
-                                            size="small"
-                                            placeholder="Search by emotion, date..."
-                                            value={searchInput}
-                                            onChange={(e) =>
-                                                setSearchInput(e.target.value)
-                                            }
-                                            sx={{
-                                                '& .MuiOutlinedInput-root': {
-                                                    borderRadius: 2,
-                                                },
-                                            }}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SearchIcon
-                                                            fontSize="small"
-                                                            sx={{
-                                                                color: 'text.secondary',
-                                                            }}
-                                                        />
-                                                    </InputAdornment>
-                                                ),
-                                                endAdornment: searchInput && (
-                                                    <InputAdornment position="end">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => {
-                                                                setSearchInput(
-                                                                    ''
-                                                                );
-                                                                if (searchInput)
-                                                                    handleKeywordChange(
-                                                                        ''
-                                                                    );
-                                                            }}
-                                                        >
-                                                            <ClearIcon fontSize="small" />
-                                                        </IconButton>
-                                                    </InputAdornment>
-                                                ),
-                                            }}
-                                        />
-                                    </form>
-                                </Grid>
-
                                 {/* Filter and refresh buttons */}
-                                <Grid item xs={12} md={2}>
+                                <Grid item xs={12} md={4}>
                                     <Stack direction="row" spacing={1}>
                                         <Button
                                             variant="contained"
@@ -437,23 +386,10 @@ const History = () => {
                                         fontWeight: 500,
                                     }}
                                 />
-
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: 'text.secondary',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                    }}
-                                >
-                                    <CalendarIcon fontSize="small" />
-                                    Page {page}/{totalPages || 1}
-                                </Typography>
                             </Stack>
                         </Box>
 
-                        {/* View mode and rows per page */}
+                        {/* View mode */}
                         <Stack direction="row" spacing={2} alignItems="center">
                             <Box
                                 sx={{
@@ -494,52 +430,8 @@ const History = () => {
                                     </IconButton>
                                 </Tooltip>
                             </Box>
-
-                            <FormControl
-                                size="small"
-                                variant="outlined"
-                                sx={{
-                                    minWidth: 120,
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 2,
-                                    },
-                                }}
-                            >
-                                <InputLabel id="rows-per-page-label">
-                                    Rows
-                                </InputLabel>
-                                <Select
-                                    labelId="rows-per-page-label"
-                                    value={limit}
-                                    onChange={(e) =>
-                                        handleLimitChange(e.target.value)
-                                    }
-                                    label="Rows"
-                                >
-                                    {rowsPerPageOptions.map((option) => (
-                                        <MenuItem key={option} value={option}>
-                                            {option}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
                         </Stack>
                     </Box>
-
-                    {/* Loading indicator */}
-                    {loading && (
-                        <Box sx={{ width: '100%', mb: 2 }}>
-                            <LinearProgress
-                                sx={{
-                                    borderRadius: 1,
-                                    height: 6,
-                                    '& .MuiLinearProgress-bar': {
-                                        borderRadius: 1,
-                                    },
-                                }}
-                            />
-                        </Box>
-                    )}
 
                     {/* Error message */}
                     {error && (
@@ -560,15 +452,11 @@ const History = () => {
 
                     {/* Content - List or skeleton */}
                     <Box sx={{ mb: 3, minHeight: '50vh' }}>
-                        <Fade in={!loading} timeout={500}>
-                            <div>
-                                {loading ? renderSkeletons() : renderItems()}
-                            </div>
-                        </Fade>
+                        <div>{loading ? renderSkeletons() : renderItems()}</div>
                     </Box>
 
                     {/* Pagination */}
-                    {!loading && data?.length > 0 && (
+                    {!loading && (
                         <Box
                             sx={{
                                 mt: 4,
@@ -576,22 +464,26 @@ const History = () => {
                                 justifyContent: 'center',
                             }}
                         >
-                            <Pagination
-                                count={totalPages || 1}
-                                page={page}
-                                onChange={(_, newPage) =>
-                                    handlePageChange(newPage)
+                            <TablePagination
+                                component="div"
+                                count={totalCount || 0}
+                                page={(page || 1) - 1} // TablePagination sử dụng index bắt đầu từ 0
+                                onPageChange={handleChangePage}
+                                rowsPerPage={limit}
+                                onRowsPerPageChange={handleChangeRowsPerPage}
+                                rowsPerPageOptions={[12, 24, 36, 48]}
+                                labelRowsPerPage="Số dòng:"
+                                labelDisplayedRows={({ from, to, count }) =>
+                                    `${from}-${to} của ${
+                                        count !== -1 ? count : `hơn ${to}`
+                                    }`
                                 }
-                                color="primary"
-                                shape="rounded"
+                                // Luôn hiển thị nút next/previous
+                                nextIconButtonProps={{
+                                    disabled: loading || data.length < limit,
+                                }}
                                 showFirstButton
                                 showLastButton
-                                size={isMobile ? 'small' : 'medium'}
-                                sx={{
-                                    '& .MuiPaginationItem-root': {
-                                        borderRadius: 2,
-                                    },
-                                }}
                             />
                         </Box>
                     )}
@@ -603,9 +495,16 @@ const History = () => {
                         open={modalOpen}
                         onClose={handleCloseModal}
                         item={selectedItem}
-                        onDelete={handleDelete}
+                        onDelete={handleDeleteConfirmation}
                     />
                 )}
+
+                {/* Confirm Delete Modal */}
+                <ConfirmDeleteModal
+                    open={deleteConfirmOpen}
+                    onClose={handleDeleteCancel}
+                    onConfirm={() => itemToDelete && handleDelete(itemToDelete)}
+                />
             </Container>
         </Fade>
     );

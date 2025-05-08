@@ -310,7 +310,6 @@ export default function Home() {
                         variant={isMobile ? 'body1' : 'h5'}
                         color="text.secondary"
                         sx={{
-                            mb: { xs: 3, md: 4 },
                             maxWidth: '800px',
                             mx: 'auto',
                             lineHeight: 1.8,
@@ -321,7 +320,8 @@ export default function Home() {
                         transition={{ delay: 0.4 }}
                     >
                         Precise emotion analysis with cutting-edge AI technology
-                        for businesses and individuals
+                        for businesses and individuals. Try it now in guest mode
+                        with 5 free detections or sign up for unlimited access.
                     </Typography>
                     <MotionBox
                         initial={{ opacity: 0, y: 20 }}

@@ -93,7 +93,7 @@ const EmotionDetailModal = ({ open, onClose, detection }) => {
                                     width: '100%',
                                     height: 'auto',
                                     minHeight: 300,
-                                    objectFit: 'contain',
+                                    objectFit: 'cover',
                                 }}
                             />
                         </Card>

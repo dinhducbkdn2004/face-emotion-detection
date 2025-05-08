@@ -24,10 +24,13 @@ const EmotionDetector = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
 
-    const [detect, result, loading, error] = useApi(detectEmotion, {
-        showSuccessToast: true,
-        successMessage: 'Emotion analysis completed successfully!',
-    });
+    const [detect, result, loading, error, resetApiState] = useApi(
+        detectEmotion,
+        {
+            showSuccessToast: true,
+            successMessage: 'Emotion analysis completed successfully!',
+        }
+    );
 
     // Xử lý khi người dùng chọn file
     const handleFileChange = (file) => {
@@ -42,6 +45,8 @@ const EmotionDetector = () => {
             URL.revokeObjectURL(previewUrl);
             setPreviewUrl(null);
         }
+        // Xóa kết quả khi xóa file
+        resetApiState();
     };
 
     // Gửi ảnh để phân tích
@@ -55,6 +60,17 @@ const EmotionDetector = () => {
             console.error('Error detecting emotion:', error);
         }
     };
+
+    // Đảm bảo kết quả được xóa khi component unmount
+    useEffect(() => {
+        return () => {
+            // Clean up
+            if (previewUrl) {
+                URL.revokeObjectURL(previewUrl);
+            }
+            resetApiState();
+        };
+    }, []);
 
     return (
         <Box>
@@ -130,7 +146,6 @@ const EmotionDetector = () => {
                         boxShadow: theme.shadows[1],
                     }}
                 >
-
                     <EmotionResults
                         result={result}
                         loading={loading}
