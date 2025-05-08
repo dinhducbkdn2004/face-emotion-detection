@@ -44,16 +44,19 @@ export const UserProvider = ({ children }) => {
         const verifyWithBackend = async () => {
             if (isAuthenticated && user) {
                 try {
-                    console.log('Đang xác thực với backend cho user Firebase', user.uid);
+                    console.log(
+                        'Đang xác thực với backend cho user Firebase',
+                        user.uid
+                    );
                     const response = await verifyTokenWithBackend();
-                    
+
                     // Thêm log để theo dõi phản hồi
                     console.log('Phản hồi từ backend:', response);
-                    
+
                     // Kiểm tra nếu có phản hồi từ server
                     if (response) {
                         setBackendVerified(true);
-                        
+
                         // Lưu thông tin hồ sơ từ backend
                         if (response.user) {
                             setBackendProfile(response.user);
@@ -76,7 +79,7 @@ export const UserProvider = ({ children }) => {
                     // Dùng hàm getUserProfile để lấy thông tin guest
                     const profile = await getUserProfile();
                     console.log('Thông tin người dùng khách:', profile);
-                    
+
                     if (profile) {
                         setIsGuest(profile.is_guest || false);
                         setUsageCount(profile.usage_count || 0);
@@ -85,7 +88,10 @@ export const UserProvider = ({ children }) => {
                         setBackendProfile(profile);
                     }
                 } catch (error) {
-                    console.error('Lỗi khi kiểm tra thông tin người dùng khách:', error);
+                    console.error(
+                        'Lỗi khi kiểm tra thông tin người dùng khách:',
+                        error
+                    );
                     // Reset trạng thái nếu không lấy được thông tin người dùng khách
                     setIsGuest(false);
                     setUsageCount(0);

@@ -15,6 +15,7 @@ import {
     ListItemIcon,
     ListItemText,
     Divider,
+    Typography,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -159,21 +160,33 @@ const Navbar = () => {
                             alignItems: 'center',
                         }}
                     >
-                        <Badge
-                            badgeContent="AI"
-                            color="primary"
+                        <Box
                             sx={{
-                                '& .MuiBadge-badge': {
-                                    fontSize: '0.6rem',
-                                    height: '16px',
-                                    minWidth: '16px',
-                                    top: -2,
-                                    right: -15,
-                                },
+                                display: 'flex',
+                                alignItems: 'center',
+                                position: 'relative',
                             }}
                         >
-                            Emotion Detection
-                        </Badge>
+                            <img
+                                src="/logo-duc-bao.svg"
+                                alt="Đức-Bảo Logo"
+                                style={{
+                                    marginRight: '8px',
+                                    filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.2))',
+                                    transition: 'all 0.3s ease',
+                                    height: '44px',
+                                    width: '44px',
+                                }}
+                            />
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 'bold',
+                                }}
+                            >
+                                Emotions Detection
+                            </Typography>
+                        </Box>
                     </Link>
 
                     {/* Menu chính - Hiển thị trên màn hình lớn */}

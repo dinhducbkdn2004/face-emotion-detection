@@ -57,15 +57,15 @@ export const detectEmotion = async (imageFile) => {
 export const detectEmotionBatch = async (imageFiles, onProgress) => {
     try {
         const formData = new FormData();
-        
+
         // Tạo map để lưu trữ tên file theo ID
         const fileNameMap = {};
-        
+
         imageFiles.forEach((file, index) => {
             formData.append('files', file);
             // Thêm tên file để dễ dàng mapping kết quả
             formData.append('filenames', file.name);
-            
+
             // Lưu tên file theo index để mapping sau này
             fileNameMap[index] = file.name;
         });
@@ -125,12 +125,14 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
                         if (jsonData && jsonData.guest_id) {
                             localStorage.setItem('guestId', jsonData.guest_id);
                         }
-                        
+
                         // Thêm filename vào kết quả nếu chưa có
                         if (!jsonData.filename && jsonData.detection_results) {
                             // Dùng index hoặc detection_id để mapping tên file
                             if (processedCount < imageFiles.length) {
-                                jsonData.filename = fileNameMap[processedCount] || imageFiles[processedCount].name;
+                                jsonData.filename =
+                                    fileNameMap[processedCount] ||
+                                    imageFiles[processedCount].name;
                                 processedCount++;
                             }
                         }
@@ -251,18 +253,42 @@ export const checkDetectionStatus = async (detectionId) => {
  * Lấy lịch sử phát hiện cảm xúc
  * @param {number} skip - Số bản ghi bỏ qua (phân trang)
  * @param {number} limit - Số bản ghi tối đa trả về
- * @returns {Promise<Array>} Danh sách kết quả phát hiện
+ * @param {Object} filters - Các bộ lọc bổ sung (fromDate, toDate, keyword)
+ * @returns {Promise<Object>} Danh sách kết quả phát hiện kèm metadata
  */
-export const getEmotionHistory = async (skip = 0, limit = 10) => {
+export const getEmotionHistory = async (skip = 0, limit = 10, filters = {}) => {
     try {
         // Thêm guestId vào URL nếu người dùng là khách
         const guestId = localStorage.getItem('guestId');
         let url = `/api/history?skip=${skip}&limit=${limit}`;
+
+        // Thêm các tham số lọc vào URL
+        const { fromDate, toDate, keyword } = filters;
+        if (fromDate) {
+            url += `&from_date=${fromDate.toISOString()}`;
+        }
+        if (toDate) {
+            url += `&to_date=${toDate.toISOString()}`;
+        }
+        if (keyword) {
+            url += `&keyword=${encodeURIComponent(keyword)}`;
+        }
+
+        // Thêm guest_id nếu có
         if (guestId) {
             url += `&guest_id=${guestId}`;
         }
 
+        console.log('Gọi API:', url);
         const response = await apiClient.get(url);
+
+        // In log cấu trúc phản hồi để debug
+        console.log('API phản hồi:', response);
+
+        // Cấu trúc phản hồi API có thể là:
+        // 1. { data: [...items], totalCount: number }
+        // 2. [...items] (với metadata trong header hoặc item đầu tiên)
+
         return response.data;
     } catch (error) {
         console.error('Lỗi khi lấy lịch sử phát hiện:', error);

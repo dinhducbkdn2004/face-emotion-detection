@@ -69,10 +69,71 @@ const useHistoryData = (options = {}) => {
                 keyword,
             });
 
-            // Giả định response có cấu trúc { data: [...], totalCount: number }
-            // Nếu API chỉ trả về mảng dữ liệu, bạn cần điều chỉnh đoạn code này
-            const responseData = response.data || response;
-            const count = response.totalCount || responseData.length;
+            // Xử lý cấu trúc phản hồi từ API
+            let responseData = [];
+            let count = 0;
+
+            if (Array.isArray(response)) {
+                // Nếu response là mảng, API trả về trực tiếp danh sách bản ghi
+                responseData = response;
+
+                // Nếu độ dài mảng bằng limit, giả định còn thêm bản ghi
+                if (responseData.length >= limit) {
+                    // Với mảng đầy đủ, giả định còn thêm ít nhất 1 trang nữa
+                    count = skip + responseData.length + 1;
+                } else {
+                    // Nếu không đủ limit, tổng số bản ghi là skip + số bản ghi hiện tại
+                    count = skip + responseData.length;
+                }
+
+                // Nếu API có trả về tổng số bản ghi trong header hoặc item đầu tiên, ưu tiên sử dụng
+                if (
+                    response.length > 0 &&
+                    (response[0]?.total_count ||
+                        response[0]?.totalCount ||
+                        response[0]?.total)
+                ) {
+                    count =
+                        response[0]?.total_count ||
+                        response[0]?.totalCount ||
+                        response[0]?.total;
+                }
+            } else if (response && typeof response === 'object') {
+                // Nếu response là object với cấu trúc { data, totalCount }
+                responseData = response.data || response.items || [];
+
+                // Nếu có trường totalCount, sử dụng nó
+                if (
+                    response.totalCount !== undefined ||
+                    response.total_count !== undefined ||
+                    response.total !== undefined
+                ) {
+                    count =
+                        response.totalCount ||
+                        response.total_count ||
+                        response.total;
+                } else if (responseData.length >= limit) {
+                    // Nếu độ dài bằng limit, giả định còn thêm ít nhất 1 trang nữa
+                    count = skip + responseData.length + 1;
+                } else {
+                    count = skip + responseData.length;
+                }
+            }
+
+            // Đảm bảo totalCount luôn lớn hơn hoặc bằng số lượng bản ghi đã tải
+            if (count < skip + responseData.length) {
+                count = skip + responseData.length;
+            }
+
+            // Đảm bảo luôn có thể chuyển trang nếu số bản ghi bằng limit
+            if (responseData.length === limit && count === skip + limit) {
+                // Tăng count thêm 1 để enable nút Next
+                count += 1;
+            }
+
+            console.log('API response:', response);
+            console.log('Calculated total count:', count);
+            console.log('Current skip:', skip, 'Current limit:', limit);
 
             // Cập nhật cache
             cache.current.data[key] = responseData;
@@ -82,10 +143,7 @@ const useHistoryData = (options = {}) => {
             setData(responseData);
             setTotalCount(count);
             setTotalPages(Math.ceil(count / limit));
-            setHasMore(
-                responseData.length === limit &&
-                    skip + responseData.length < count
-            );
+            setHasMore(responseData.length === limit);
         } catch (err) {
             setError(err);
         } finally {

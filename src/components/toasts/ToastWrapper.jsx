@@ -16,7 +16,7 @@ const ToastWrapper = ({ children }) => {
             {children}
 
             <ToastContainer
-                position="top-right"
+                position="bottom-left"
                 autoClose={3000}
                 hideProgressBar={false}
                 newestOnTop

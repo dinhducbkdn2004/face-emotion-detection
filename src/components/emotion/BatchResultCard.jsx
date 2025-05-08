@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     Box,
     Typography,
@@ -8,7 +8,14 @@ import {
     Chip,
     useTheme,
     Alert,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    ListItemButton,
+    Collapse,
 } from '@mui/material';
+import { Face as FaceIcon, ExpandMore, ExpandLess } from '@mui/icons-material';
 import EmotionResultCard from './EmotionResultCard';
 import FaceBoxOverlay from './FaceBoxOverlay';
 
@@ -20,6 +27,37 @@ import FaceBoxOverlay from './FaceBoxOverlay';
 const BatchResultCard = ({ result }) => {
     const theme = useTheme();
     const [imageUrl, setImageUrl] = useState(null);
+    const [expandedFaces, setExpandedFaces] = useState({});
+    const facesListRef = useRef({});
+
+    // Toggle face details
+    const handleFaceClick = (faceIndex) => {
+        setExpandedFaces((prev) => ({
+            ...prev,
+            [faceIndex]: !prev[faceIndex],
+        }));
+
+        // Cuộn đến kết quả tương ứng
+        scrollToFace(faceIndex);
+    };
+
+    // Cuộn đến kết quả khi click vào bounding box
+    const scrollToFace = (faceIndex) => {
+        if (facesListRef.current[faceIndex]) {
+            facesListRef.current[faceIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
+
+            // Tự động mở rộng nếu chưa mở
+            if (!expandedFaces[faceIndex]) {
+                setExpandedFaces((prev) => ({
+                    ...prev,
+                    [faceIndex]: true,
+                }));
+            }
+        }
+    };
 
     // Kiểm tra kỹ kết quả để tránh lỗi
     if (!result) {
@@ -79,6 +117,18 @@ const BatchResultCard = ({ result }) => {
         }
     }, [result.file, result.image_url]);
 
+    // Cảnh báo màu sắc theo cảm xúc
+    const emotionColors = {
+        happy: '#4caf50',
+        sad: '#5c6bc0',
+        angry: '#f44336',
+        surprise: '#ff9800',
+        fear: '#9c27b0',
+        disgust: '#795548',
+        neutral: '#607d8b',
+        contempt: '#795548',
+    };
+
     // Log để debug
     console.log(
         'BatchResultCard: Hiển thị kết quả cho',
@@ -130,22 +180,127 @@ const BatchResultCard = ({ result }) => {
 
                 {/* Hiển thị ảnh với bounding box */}
                 {imageUrl && (
-                    <FaceBoxOverlay imageUrl={imageUrl} faces={faces} />
+                    <FaceBoxOverlay
+                        imageUrl={imageUrl}
+                        faces={faces}
+                        onFaceClick={scrollToFace}
+                    />
                 )}
 
-                <Grid container spacing={2}>
-                    {faces.map((face, idx) => (
-                        <Grid
-                            item
-                            xs={12}
-                            md={6}
-                            lg={4}
-                            key={`${result.detection_id || result.filename}-face-${idx}`}
-                        >
-                            <EmotionResultCard face={face} faceIndex={idx} />
-                        </Grid>
-                    ))}
-                </Grid>
+                {/* Danh sách khuôn mặt dạng list */}
+                <List
+                    sx={{
+                        width: '100%',
+                        bgcolor: 'background.paper',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: theme.palette.divider,
+                        mt: 2,
+                        mb: 2,
+                    }}
+                >
+                    {faces.map((face, idx) => {
+                        const primaryEmotion = face.emotions[0];
+                        const primaryEmotionColor =
+                            emotionColors[primaryEmotion.emotion] ||
+                            theme.palette.primary.main;
+                        const isExpanded = expandedFaces[idx] || false;
+
+                        return (
+                            <Box
+                                key={idx}
+                                ref={(el) => (facesListRef.current[idx] = el)}
+                            >
+                                <ListItemButton
+                                    onClick={() => handleFaceClick(idx)}
+                                    sx={{
+                                        borderLeft: `4px solid ${primaryEmotionColor}`,
+                                        transition: 'all 0.2s ease',
+                                        borderRadius: isExpanded
+                                            ? '8px 8px 0 0'
+                                            : 2,
+                                        mb: isExpanded ? 0 : 1,
+                                    }}
+                                >
+                                    <ListItemIcon>
+                                        <Box
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor: `${primaryEmotionColor}15`,
+                                                color: primaryEmotionColor,
+                                            }}
+                                        >
+                                            <FaceIcon />
+                                        </Box>
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={
+                                            <Typography
+                                                variant="subtitle1"
+                                                fontWeight="medium"
+                                            >
+                                                Face #{idx + 1}
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: primaryEmotionColor,
+                                                    fontWeight: 'medium',
+                                                }}
+                                            >
+                                                {primaryEmotion.emotion
+                                                    .charAt(0)
+                                                    .toUpperCase() +
+                                                    primaryEmotion.emotion.slice(
+                                                        1
+                                                    )}{' '}
+                                                (
+                                                {primaryEmotion.percentage.toFixed(
+                                                    1
+                                                )}
+                                                %)
+                                            </Typography>
+                                        }
+                                    />
+                                    {isExpanded ? (
+                                        <ExpandLess />
+                                    ) : (
+                                        <ExpandMore />
+                                    )}
+                                </ListItemButton>
+                                <Collapse
+                                    in={isExpanded}
+                                    timeout="auto"
+                                    unmountOnExit
+                                >
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            bgcolor:
+                                                theme.palette.mode === 'dark'
+                                                    ? 'rgba(255,255,255,0.03)'
+                                                    : 'rgba(0,0,0,0.01)',
+                                            borderRadius: '0 0 8px 8px',
+                                            mb: 1,
+                                        }}
+                                    >
+                                        <EmotionResultCard
+                                            face={face}
+                                            faceIndex={idx}
+                                        />
+                                    </Box>
+                                </Collapse>
+                            </Box>
+                        );
+                    })}
+                </List>
             </CardContent>
         </Card>
     );
