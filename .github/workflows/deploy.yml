@@ -1,0 +1,39 @@
+name: Deploy React Vite to Azure VM
+
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            # Checkout code từ GitHub
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            # Thêm Azure VM vào known_hosts để tránh lỗi xác minh khóa host
+            - name: Add Azure VM to known_hosts
+              run: |
+                  mkdir -p ~/.ssh
+                  ssh-keyscan -H ${{ secrets.AZURE_VM_HOST }} >> ~/.ssh/known_hosts
+
+            # Thiết lập SSH để kết nối với Azure VM
+            - name: Setup SSH
+              uses: webfactory/ssh-agent@v0.5.3
+              with:
+                  ssh-private-key: ${{ secrets.AZURE_VM_PRIVATE_KEY }}
+
+            # Cài đặt và build ứng dụng React trong thư mục ~/docker/pbl4-video-chat-fe
+            - name: Build React App and Deploy
+              run: |
+                  ssh -o StrictHostKeyChecking=no ${{ secrets.AZURE_VM_USER }}@${{ secrets.AZURE_VM_HOST }} << EOF
+                    cd ~/docker/face-emotion-detection
+                    git pull origin master
+                    npm install --legacy-peer-deps
+                    npm run build
+                    sudo cp -r dist/* /var/www/face-emotion-detection/
+                    sudo systemctl restart nginx
+                  EOF
