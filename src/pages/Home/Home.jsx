@@ -389,7 +389,7 @@ export default function Home() {
                             <Typography variant="body1" sx={{ mb: 2 }}>
                                 You can try the emotion detection feature
                                 without creating an account! Each device is
-                                provided with cấp 5 lần dùng thử miễn phí.
+                                provided with 5 free detections.
                             </Typography>
                             <Box
                                 sx={{
