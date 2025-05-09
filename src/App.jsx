@@ -12,6 +12,7 @@ import Profile from './pages/Profile/Profile';
 import Settings from './pages/Settings/Settings';
 import History from './pages/History/History';
 import HistoryDetail from './pages/History/HistoryDetail';
+import Guest from './pages/Guest/Guest';
 
 // Protected Route component
 const ProtectedRoute = ({ children }) => {
@@ -60,6 +61,16 @@ function App() {
                     {/* Public routes */}
                     <Route path="/" element={<Home />} />
                     <Route path="/about" element={<About />} />
+
+                    {/* Guest route - Chỉ hiển thị khi chưa đăng nhập */}
+                    <Route
+                        path="/guest"
+                        element={
+                            <PublicOnlyRoute>
+                                <Guest />
+                            </PublicOnlyRoute>
+                        }
+                    />
 
                     {/* Auth routes - chỉ hiển thị khi chưa đăng nhập */}
                     <Route

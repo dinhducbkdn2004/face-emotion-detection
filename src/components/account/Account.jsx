@@ -256,7 +256,6 @@ const Account = () => {
                     sx={{
                         py: 1.5,
                         '&:hover': {
-                            bgcolor: 'error.light',
                             '& .MuiListItemIcon-root': {
                                 color: 'error.main',
                             },

@@ -21,8 +21,13 @@ import {
     Security,
     BarChart,
     TouchApp,
+    Login,
+    HowToReg,
+    Speed,
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../components/account/UserContext';
 
 const MotionBox = motion(Box);
 const MotionPaper = motion(Paper);
@@ -92,6 +97,8 @@ const testimonials = [
 
 export default function Home() {
     const theme = useTheme();
+    const navigate = useNavigate();
+    const { isAuthenticated } = useUser();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const isTablet = useMediaQuery(theme.breakpoints.down('md'));
     const [typedText, setTypedText] = useState('');
@@ -323,67 +330,99 @@ export default function Home() {
                         for businesses and individuals. Try it now in guest mode
                         with 5 free detections or sign up for unlimited access.
                     </Typography>
-                    <MotionBox
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
+                    {isAuthenticated && (
+                        <Box
                         sx={{
+                            mt: 4,
                             display: 'flex',
                             flexDirection: isMobile ? 'column' : 'row',
-                            gap: '16px',
+                            gap: 2,
                             justifyContent: 'center',
-                            mb: { xs: 6, md: 8 },
                         }}
                     >
                         <Button
                             variant="contained"
-                            size={isMobile ? 'medium' : 'large'}
+                            size="large"
+                            color="primary"
+                            onClick={() => navigate('/dashboard')}
                             sx={{
+                                py: 1.5,
+                                px: 4,
                                 borderRadius: 2,
-                                textTransform: 'none',
-                                py: { xs: 1.5, md: 2 },
-                                px: { xs: 4, md: 5 },
-                                width: isMobile ? '100%' : 'auto',
-                                mb: isMobile ? 1 : 0,
                                 fontWeight: 'bold',
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                                '&:hover': {
-                                    transform: 'translateY(-4px)',
-                                    boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
-                                },
-                                transition: 'all 0.3s ease',
+                                boxShadow: 4,
                             }}
-                            component={motion.button}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
                         >
-                            Get Started
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            size={isMobile ? 'medium' : 'large'}
-                            sx={{
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                py: { xs: 1.5, md: 2 },
-                                px: { xs: 4, md: 5 },
-                                width: isMobile ? '100%' : 'auto',
-                                fontWeight: 'bold',
-                                borderWidth: 2,
-                                '&:hover': {
-                                    borderWidth: 2,
-                                    background: 'rgba(0,0,0,0.02)',
-                                },
-                            }}
-                            component={motion.button}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            Learn More
-                        </Button>
-                    </MotionBox>
+                            Go to Dashboard
+                            </Button>
+                        </Box>
+                    )}
 
-                    <Divider sx={{ width: '60%', mx: 'auto', mb: 8 }} />
+                    {/* Guest Mode Description - Visible Only for Non-Authenticated Users */}
+                    {!isAuthenticated && (
+                        <MotionPaper
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.5, duration: 0.5 }}
+                            sx={{
+                                mt: 5,
+                                p: 3,
+                                maxWidth: '800px',
+                                mx: 'auto',
+                                borderRadius: 2,
+                                border: `1px solid ${theme.palette.divider}`,
+                                boxShadow: 3,
+                                bgcolor:
+                                    theme.palette.mode === 'dark'
+                                        ? 'rgba(37, 37, 37, 0.9)'
+                                        : 'rgba(255, 255, 255, 0.9)',
+                            }}
+                        >
+                            <Typography
+                                variant="h5"
+                                color="primary"
+                                fontWeight="bold"
+                                gutterBottom
+                            >
+                                Guest mode
+                            </Typography>
+                            <Typography variant="body1" sx={{ mb: 2 }}>
+                                You can try the emotion detection feature
+                                without creating an account! Each device is
+                                provided with cấp 5 lần dùng thử miễn phí.
+                            </Typography>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    mt: 2,
+                                }}
+                            >
+                                <Button
+                                    variant="outlined"
+                                    size="large"
+                                    startIcon={<Speed />}
+                                    onClick={() => navigate('/guest')}
+                                    sx={{
+                                        py: 1.5,
+                                        px: 4,
+                                        borderRadius: 2,
+                                        fontWeight: 'medium',
+                                        borderColor: theme.palette.success.main,
+                                        color: theme.palette.success.main,
+                                        '&:hover': {
+                                            borderColor:
+                                                theme.palette.success.dark,
+                                            backgroundColor:
+                                                theme.palette.success.light,
+                                        },
+                                    }}
+                                >
+                                    Try it now
+                                </Button>
+                            </Box>
+                        </MotionPaper>
+                    )}
                 </MotionBox>
 
                 {/* Features Section */}
