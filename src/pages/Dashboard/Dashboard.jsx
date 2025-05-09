@@ -13,9 +13,10 @@ import {
     Grid,
     Skeleton,
 } from '@mui/material';
-import { PhotoCamera, PhotoLibrary } from '@mui/icons-material';
+import { PhotoCamera, PhotoLibrary, Videocam } from '@mui/icons-material';
 import EmotionDetector from '../../components/EmotionDetector';
 import BatchEmotionDetector from '../../components/BatchEmotionDetector';
+import RealtimeEmotionDetector from '../../components/RealtimeEmotionDetector';
 
 function CustomTabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -177,6 +178,17 @@ const Dashboard = () => {
                                 icon={<PhotoLibrary />}
                                 iconPosition="start"
                             />
+                            <Tab
+                                label={
+                                    isMobile
+                                        ? 'Realtime'
+                                        : 'Realtime Detection'
+                                }
+                                id="emotion-tab-2"
+                                aria-controls="emotion-tabpanel-2"
+                                icon={<Videocam />}
+                                iconPosition="start"
+                            />
                         </Tabs>
                     </Box>
 
@@ -186,6 +198,9 @@ const Dashboard = () => {
                         </CustomTabPanel>
                         <CustomTabPanel value={tabValue} index={1}>
                             <BatchEmotionDetector />
+                        </CustomTabPanel>
+                        <CustomTabPanel value={tabValue} index={2}>
+                            <RealtimeEmotionDetector />
                         </CustomTabPanel>
                     </Box>
                 </Paper>

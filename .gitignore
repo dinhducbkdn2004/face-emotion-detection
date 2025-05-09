@@ -28,7 +28,3 @@ dist-ssr
 
 # Environment variables
 .env
-
-
-api_guide.md
-socketio_protocol.md
