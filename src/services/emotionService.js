@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient, { checkApiServerStatus } from './apiClient';
 import ToastService from '../toasts/ToastService';
 
 /**
@@ -7,6 +7,12 @@ import ToastService from '../toasts/ToastService';
  * @returns {Promise<Object>} Kết quả phát hiện cảm xúc
  */
 export const detectEmotion = async (imageFile) => {
+    // Kiểm tra server trước khi gửi request
+    const isServerOnline = await checkApiServerStatus();
+    if (!isServerOnline) {
+        throw new Error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng và thử lại sau.');
+    }
+
     try {
         const formData = new FormData();
         formData.append('file', imageFile);
@@ -18,10 +24,15 @@ export const detectEmotion = async (imageFile) => {
             url += `?guest_id=${guestId}`;
         }
 
+        // Hiển thị thông báo đang xử lý
+        ToastService.info('Đang phân tích cảm xúc, vui lòng đợi...');
+
         const response = await apiClient.post(url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            // Giảm timeout của singe request để có thể retry sớm hơn
+            timeout: 30000,
         });
 
         // Lưu guestId mới nếu có
@@ -33,15 +44,27 @@ export const detectEmotion = async (imageFile) => {
     } catch (error) {
         console.error('Lỗi phát hiện cảm xúc:', error);
 
-        if (error.response?.status === 429) {
+        if (error.code === 'ECONNABORTED') {
+            ToastService.error('Quá thời gian xử lý. Máy chủ đang bận, vui lòng thử lại sau.');
+        } else if (error.message.includes('Network Error') || error.message.includes('connect')) {
+            ToastService.error('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng của bạn.');
+        } else if (error.response?.status === 429) {
             ToastService.error(
                 'Bạn đã vượt quá giới hạn sử dụng. Vui lòng đăng nhập hoặc thử lại sau.'
+            );
+        } else if (error.response?.status === 403) {
+            ToastService.error(
+                'Bạn đã hết lượt dùng thử. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục.'
             );
         } else if (error.response?.status === 400) {
             ToastService.error(
                 error.response.data?.message ||
                     'File không hợp lệ. Vui lòng thử lại với file khác.'
             );
+        } else if (error.response?.status >= 500) {
+            ToastService.error('Máy chủ đang gặp sự cố. Vui lòng thử lại sau.');
+        } else {
+            ToastService.error('Có lỗi xảy ra khi phân tích cảm xúc. Vui lòng thử lại.');
         }
 
         throw error;

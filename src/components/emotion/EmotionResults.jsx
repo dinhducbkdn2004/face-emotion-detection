@@ -13,6 +13,7 @@ import { InfoOutlined, Face as FaceIcon } from '@mui/icons-material';
 import EmotionResultSkeleton from './EmotionResultSkeleton';
 import FaceBoxOverlay from './FaceBoxOverlay';
 import EmotionResultsList from './EmotionResultsList';
+import ErrorMessage from '../ui/ErrorMessage';
 
 /**
  * Component to display emotion analysis results
@@ -21,8 +22,9 @@ import EmotionResultsList from './EmotionResultsList';
  * @param {boolean} props.loading - Loading state
  * @param {Object} props.error - Error (if any)
  * @param {string} props.previewUrl - Preview image URL
+ * @param {Function} props.onRetry - Callback when retry button is clicked
  */
-const EmotionResults = ({ result, loading, error, previewUrl }) => {
+const EmotionResults = ({ result, loading, error, previewUrl, onRetry }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -31,18 +33,52 @@ const EmotionResults = ({ result, loading, error, previewUrl }) => {
     }
 
     if (error) {
+        // Xác định loại lỗi
+        let errorType = 'error';
+        let errorMessage = 'Có lỗi xảy ra khi phân tích cảm xúc. Vui lòng thử lại.';
+        
+        if (error.code === 'ECONNABORTED') {
+            errorType = 'connection';
+            errorMessage = 'Quá thời gian xử lý. Máy chủ đang bận, vui lòng thử lại sau.';
+        } else if (error.message?.includes('Network Error') || error.message?.includes('connect')) {
+            errorType = 'connection';
+            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng của bạn.';
+        } else if (error.response?.status === 403) {
+            errorType = 'warning';
+            errorMessage = 'Bạn đã hết lượt dùng thử. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục.';
+        } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+        }
+        
         return (
-            <Alert
-                severity="error"
-                sx={{
-                    borderRadius: 3,
-                    mt: 2,
-                    boxShadow: '0 4px 20px rgba(255,0,0,0.1)',
-                }}
-                variant="filled"
+            <ErrorMessage
+                type={errorType}
+                message={errorMessage}
+                onRetry={onRetry}
             >
-                An error occurred while analyzing emotions. Please try again.
-            </Alert>
+                {previewUrl && (
+                    <Box 
+                        sx={{ 
+                            mb: 2, 
+                            maxWidth: '300px', 
+                            borderRadius: 2, 
+                            overflow: 'hidden',
+                            border: `1px solid ${theme.palette.divider}`
+                        }}
+                    >
+                        <img 
+                            src={previewUrl} 
+                            alt="Uploaded" 
+                            style={{ 
+                                width: '100%', 
+                                height: 'auto',
+                                display: 'block',
+                                opacity: 0.7
+                            }} 
+                        />
+                    </Box>
+                )}
+            </ErrorMessage>
         );
     }
 
@@ -62,7 +98,7 @@ const EmotionResults = ({ result, loading, error, previewUrl }) => {
                 }}
                 variant="filled"
             >
-                No faces detected in this image
+                Không nhận diện được khuôn mặt trong ảnh này
             </Alert>
         );
     }

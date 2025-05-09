@@ -88,7 +88,7 @@ class ToastService {
      */
     static success(message, options = {}) {
         toast.success(message, {
-            position: 'top-right',
+            position: 'bottom-left',
             autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -105,7 +105,7 @@ class ToastService {
      */
     static error(message, options = {}) {
         toast.error(message, {
-            position: 'top-right',
+            position: 'bottom-left',
             autoClose: 5000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -122,7 +122,7 @@ class ToastService {
      */
     static warning(message, options = {}) {
         toast.warning(message, {
-            position: 'top-right',
+            position: 'bottom-left',
             autoClose: 4000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -139,7 +139,7 @@ class ToastService {
      */
     static info(message, options = {}) {
         toast.info(message, {
-            position: 'top-right',
+            position: 'bottom-left',
             autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -156,7 +156,7 @@ class ToastService {
      */
     static custom(message, options = {}) {
         toast(message, {
-            position: 'top-right',
+            position: 'bottom-left',
             autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,

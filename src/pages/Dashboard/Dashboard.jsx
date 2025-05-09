@@ -157,7 +157,9 @@ const Dashboard = () => {
                         >
                             <Tab
                                 label={
-                                    isMobile ? 'Single Image' : 'Single Image Detection'
+                                    isMobile
+                                        ? 'Single Image'
+                                        : 'Single Image Detection'
                                 }
                                 id="emotion-tab-0"
                                 aria-controls="emotion-tabpanel-0"

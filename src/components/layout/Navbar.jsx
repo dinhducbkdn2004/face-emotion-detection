@@ -30,7 +30,6 @@ import {
     History as HistoryIcon,
 } from '@mui/icons-material';
 import { useUser } from '../account/UserContext';
-import { useThemeContext } from '../theme/ThemeContext';
 import Account from '../account/Account';
 import ThemeToggle from './ThemeToggle';
 
@@ -210,7 +209,9 @@ const Navbar = () => {
                                         color={
                                             isActive(item.path)
                                                 ? 'primary'
-                                                : 'inherit'
+                                                : item.highlight
+                                                  ? 'success'
+                                                  : 'inherit'
                                         }
                                         startIcon={item.icon}
                                         sx={{
