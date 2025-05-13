@@ -16,6 +16,7 @@
     "@mui/icons-material": "^7.0.1",
     "@mui/lab": "^7.0.0-beta.11",
     "@mui/material": "^7.0.1",
+    "@mui/x-date-pickers": "^7.0.0",
     "@reduxjs/toolkit": "^2.6.1",
     "@toolpad/core": "^0.13.0",
     "axios": "^1.9.0",
