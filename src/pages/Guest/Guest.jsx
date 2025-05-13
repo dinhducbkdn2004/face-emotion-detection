@@ -32,7 +32,7 @@ const Guest = () => {
         detectEmotion,
         {
             showSuccessToast: true,
-            successMessage: 'Phân tích cảm xúc thành công!',
+            successMessage: 'Emotion detection successful!',
         }
     );
 
