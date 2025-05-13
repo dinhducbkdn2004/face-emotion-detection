@@ -78,7 +78,6 @@ export const UserProvider = ({ children }) => {
                 try {
                     // Dùng hàm getUserProfile để lấy thông tin guest
                     const profile = await getUserProfile();
-                    console.log('Thông tin người dùng khách:', profile);
 
                     if (profile) {
                         setIsGuest(profile.is_guest || false);
@@ -112,6 +111,7 @@ export const UserProvider = ({ children }) => {
             setBackendProfile(null);
             // Xóa guestId khi đăng xuất
             localStorage.removeItem('guestId');
+            localStorage.removeItem('accessToken');
             return true;
         } catch (error) {
             console.error('Lỗi khi đăng xuất:', error);

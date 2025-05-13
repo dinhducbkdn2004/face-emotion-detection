@@ -8,6 +8,12 @@ let sessionId = null;
 let isConnected = false;
 let isInitialized = false;
 
+// Biến theo dõi quá trình xử lý frame
+let frameCounter = 0;
+let processingInterval = null;
+let isProcessing = false;
+let frameRate = 3; // FPS mặc định, giảm xuống 3
+
 // Danh sách callback để xử lý event từ server
 const eventListeners = {
     detection_result: [],
@@ -53,21 +59,7 @@ export const initializeSocket = async () => {
 
         console.log('Connecting to Socket.IO at:', socketURL);
 
-        // Kiểm tra môi trường trình duyệt
-        const userAgent = navigator.userAgent || '';
-        const isEdge =
-            userAgent.indexOf('Edge') > -1 || userAgent.indexOf('Edg/') > -1;
-        // Sử dụng chỉ websocket cho Edge, cả hai cho các trình duyệt khác
-        const initialTransports = isEdge
-            ? ['websocket']
-            : ['websocket', 'polling'];
-
-        console.log(
-            `Browser detected: ${isEdge ? 'Microsoft Edge' : 'Other browser'}`
-        );
-        console.log(`Using transports:`, initialTransports);
-
-        // Khởi tạo kết nối Socket.IO với namespace và token xác thực
+        // Khởi tạo kết nối Socket.IO với namespace và token xác thực - cấu hình giống client.js
         socket = io(socketURL, {
             path: '/socket.io',
             auth: {
@@ -76,12 +68,8 @@ export const initializeSocket = async () => {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            reconnectionAttempts: 10, // Tăng số lần thử kết nối lại
-            transports: initialTransports, // Sử dụng transports dựa vào trình duyệt
-            timeout: 20000, // Tăng timeout lên 20s
-            forceNew: true, // Luôn tạo kết nối mới
-            autoConnect: true,
-            withCredentials: true,
+            reconnectionAttempts: 5,
+            transports: ['websocket', 'polling'],
         });
 
         // Đăng ký các event handlers
@@ -94,67 +82,22 @@ export const initializeSocket = async () => {
         socket.on('error_message', handleErrorMessage);
         socket.on('pong', () => console.log('Received pong from server'));
 
-        // Đợi socket kết nối hoặc lỗi
-        return new Promise((resolve, reject) => {
-            // Set timeout 20 giây
-            const timeoutId = setTimeout(() => {
-                console.error('Socket connection timeout after 20 seconds');
-                // Không reject kết nối, chỉ cảnh báo
-                console.log(
-                    'Continuing despite timeout, socket may connect later'
-                );
-
-                // Thử kết nối lại
-                if (socket && !socket.connected) {
-                    console.log(
-                        'Attempting to reconnect manually after timeout'
-                    );
-                    socket.connect();
-                }
-
-                resolve(socket);
-            }, 20000);
-
+        // Đợi socket kết nối hoặc lỗi - đơn giản hóa bằng cách không dùng timeout
+        return new Promise((resolve) => {
             // Handler khi kết nối thành công
             const onConnect = () => {
-                clearTimeout(timeoutId);
                 socket.off('connect', onConnect);
                 socket.off('connect_error', onError);
-
-                // Đánh dấu là đã connected
                 isConnected = true;
-
                 resolve(socket);
             };
 
             // Handler khi có lỗi kết nối
             const onError = (err) => {
-                clearTimeout(timeoutId);
                 socket.off('connect', onConnect);
                 socket.off('connect_error', onError);
-
                 console.error('Socket connection error:', err);
-
-                // Thêm thông tin chi tiết lỗi
-                if (err.message) console.error('Error message:', err.message);
-                if (err.description)
-                    console.error('Error description:', err.description);
-                if (err.stack) console.error('Error stack:', err.stack);
-
-                // Thử chuyển sang transport khác nếu websocket bị từ chối
-                if (err.message && err.message.includes('websocket')) {
-                    console.log(
-                        'WebSocket connection failed, switching to polling'
-                    );
-                    socket.io.opts.transports = ['polling'];
-                    socket.connect();
-                }
-
-                // Không reject, chỉ trả về socket (có thể connect sau)
-                console.log(
-                    'Continuing despite connection error, socket may connect later'
-                );
-                resolve(socket);
+                resolve(socket); // Vẫn resolve socket để xử lý sau
             };
 
             // Đăng ký các event handlers tạm thời
@@ -163,14 +106,13 @@ export const initializeSocket = async () => {
 
             // Nếu socket đã kết nối rồi, resolve ngay
             if (socket.connected) {
-                clearTimeout(timeoutId);
                 resolve(socket);
             }
         });
     } catch (error) {
         console.error('Error initializing socket:', error);
         ToastService.error(
-            'Không thể kết nối đến máy chủ realtime. Vui lòng thử lại sau.'
+            'Cannot connect to realtime server. Please try again later.'
         );
         return null;
     }
@@ -182,13 +124,10 @@ const handleConnect = () => {
     isConnected = true;
 
     // Gửi thông báo đến UI
-    ToastService.info('Đã kết nối đến máy chủ realtime.');
+    ToastService.info('Connected to realtime server.');
 
-    // Cập nhật trạng thái
-    console.log('Connection state updated: isConnected =', isConnected);
 
     // Gửi yêu cầu khởi tạo ngay
-    console.log('Automatically sending initialize event');
     socket.emit('initialize', {
         client_id: `web_client_${Date.now()}`,
         config: {
@@ -198,48 +137,22 @@ const handleConnect = () => {
             return_face_landmarks: false,
         },
     });
-
-    // Thiết lập ping interval để giữ kết nối
-    setupPingInterval();
-};
-
-// Thiết lập ping interval để giữ kết nối sống
-let pingInterval = null;
-const setupPingInterval = () => {
-    // Xóa interval cũ nếu có
-    if (pingInterval) {
-        clearInterval(pingInterval);
-    }
-
-    // Thiết lập ping mỗi 20 giây
-    pingInterval = setInterval(() => {
-        if (socket && socket.connected) {
-            console.log('Sending ping to keep connection alive');
-            socket.emit('ping');
-        } else {
-            clearInterval(pingInterval);
-            pingInterval = null;
-        }
-    }, 20000);
 };
 
 // Xử lý sự kiện kết nối bị ngắt
 const handleDisconnect = (reason) => {
-    console.log('Socket disconnected:', reason);
     isConnected = false;
+
+    // Dừng xử lý frame nếu đang chạy
+    stopFrameProcessing();
 
     // Nếu bị ngắt kết nối bởi server, thông báo cho người dùng
     if (reason === 'io server disconnect') {
-        ToastService.error('Máy chủ đã ngắt kết nối. Vui lòng thử lại sau.');
+        ToastService.error('Server disconnected. Please try again later.');
     } else if (reason === 'transport close') {
         console.log('Transport closed (network issue)');
-        // Có thể là do mạng, socket.io sẽ tự động kết nối lại
-        ToastService.warning(
-            'Kết nối mạng không ổn định, đang thử kết nối lại...'
-        );
     } else if (reason === 'ping timeout') {
-        console.log('Ping timeout - server không phản hồi');
-        ToastService.warning('Máy chủ không phản hồi, đang thử kết nối lại...');
+        console.log('Ping timeout - server not responding');
     }
 };
 
@@ -261,31 +174,17 @@ const handleConnectError = (error) => {
 
     // Xử lý các loại lỗi cụ thể
     if (error.message && error.message.includes('xhr poll error')) {
-        ToastService.error(
-            'Lỗi kết nối: Không thể thiết lập polling. Đang thử kết nối lại...'
-        );
-
         // Thử lại với chỉ websocket
         if (socket) {
             console.log('Switching to WebSocket only transport');
             socket.io.opts.transports = ['websocket'];
-            // Không cần gọi connect vì socket.io sẽ tự kết nối lại
         }
     } else if (error.message && error.message.includes('websocket error')) {
-        ToastService.error(
-            'Lỗi kết nối: WebSocket không khả dụng. Đang thử phương thức khác...'
-        );
-
         // Thử lại với chỉ polling
         if (socket) {
             console.log('Switching to polling only transport');
             socket.io.opts.transports = ['polling'];
-            // Không cần gọi connect vì socket.io sẽ tự kết nối lại
         }
-    } else {
-        ToastService.error(
-            `Không thể kết nối đến máy chủ realtime: ${error.message || 'Lỗi không xác định'}`
-        );
     }
 };
 
@@ -294,6 +193,19 @@ const handleInitialized = (data) => {
     console.log('Session initialized:', data);
     sessionId = data.session_id;
     isInitialized = true;
+
+    // Nếu server gửi về thông tin max_frame_rate, cập nhật giá trị
+    if (data.config && data.config.max_frame_rate) {
+        // Giới hạn max_frame_rate trong khoảng 1-5
+        const serverFrameRate = Math.min(
+            Math.max(data.config.max_frame_rate, 1),
+            5
+        );
+        frameRate = Math.min(frameRate, serverFrameRate);
+        console.log(
+            `Adjusted frame rate to ${frameRate} FPS from server config`
+        );
+    }
 
     // Thông báo cho các listeners
     notifyListeners('initialized', data);
@@ -358,6 +270,25 @@ const handleErrorMessage = (data) => {
         ToastService.error(`Lỗi: ${data.message}`);
     }
 
+    // Điều chỉnh frame rate nếu server báo quá tải
+    if (data.code === 429 && data.recommended_value) {
+        // Giới hạn recommended_value trong khoảng 1-5
+        const recommendedRate = Math.min(
+            Math.max(data.recommended_value, 1),
+            5
+        );
+        frameRate = recommendedRate;
+        console.log(
+            `Adjusting frame rate to ${frameRate} FPS (server recommended)`
+        );
+
+        // Khởi động lại quy trình xử lý frame với tốc độ mới
+        if (isProcessing) {
+            stopFrameProcessing();
+            startFrameProcessing();
+        }
+    }
+
     notifyListeners('error_message', data);
 };
 
@@ -393,6 +324,12 @@ export const initializeSession = (config = {}) => {
     isInitialized = false;
     console.log('Resetting initialized state before sending initialize event');
 
+    // Cập nhật frame rate từ config nếu có
+    if (config.detection_interval) {
+        frameRate = Math.round(1000 / config.detection_interval);
+        console.log(`Set frame rate to ${frameRate} FPS from config`);
+    }
+
     // Gửi event initialize theo đúng giao thức
     socket.emit('initialize', {
         client_id: `web_client_${Date.now()}`,
@@ -426,6 +363,57 @@ export const initializeSession = (config = {}) => {
     return true;
 };
 
+// Bắt đầu xử lý video frames - dựa theo socket-client.js
+export const startFrameProcessing = (captureFrameCallback) => {
+    if (!socket || !isConnected || !isInitialized) {
+        console.error('Socket not ready for frame processing');
+        return false;
+    }
+
+    // Nếu đang xử lý, dừng trước khi bắt đầu lại
+    if (isProcessing && processingInterval) {
+        stopFrameProcessing();
+    }
+
+    // Đảm bảo frameRate trong khoảng 1-5
+    frameRate = Math.min(Math.max(frameRate, 1), 5);
+
+    // Đánh dấu đang xử lý và reset bộ đếm
+    isProcessing = true;
+    frameCounter = 0;
+
+    // Tính toán khoảng thời gian dựa trên frame rate
+    const interval = Math.floor(1000 / frameRate);
+    console.log(
+        `Starting frame processing at ${frameRate} FPS (interval: ${interval}ms)`
+    );
+
+    // Thiết lập interval để gửi frames
+    processingInterval = setInterval(() => {
+        if (
+            isProcessing &&
+            captureFrameCallback &&
+            typeof captureFrameCallback === 'function'
+        ) {
+            // Gọi callback để chụp frame và gửi
+            captureFrameCallback();
+        }
+    }, interval);
+
+    return true;
+};
+
+// Dừng xử lý video frames
+export const stopFrameProcessing = () => {
+    if (processingInterval) {
+        clearInterval(processingInterval);
+        processingInterval = null;
+    }
+    isProcessing = false;
+    console.log('Stopped frame processing');
+    return true;
+};
+
 // Gửi video frame để xử lý
 export const sendVideoFrame = (frameData) => {
     if (!socket || !isConnected) {
@@ -438,10 +426,15 @@ export const sendVideoFrame = (frameData) => {
         return false;
     }
 
+    // Cập nhật frameCounter nếu chưa được đặt trong frameData
+    if (!frameData.frame_id) {
+        frameData.frame_id = ++frameCounter;
+    }
+
     // Chỉ log khi gửi frame đầu tiên và sau đó mỗi 50 frame
     if (frameData.frame_id === 1 || frameData.frame_id % 50 === 0) {
         console.log(
-            `Sending video frame #${frameData.frame_id}, resolution: ${frameData.resolution[0]}x${frameData.resolution[1]}`
+            `Sending video frame #${frameData.frame_id}, resolution: ${frameData.resolution?.[0]}x${frameData.resolution?.[1]}`
         );
     }
 
@@ -463,6 +456,18 @@ export const sendControl = (action, config = {}) => {
         timestamp: Date.now() / 1000,
         ...config,
     });
+
+    // Nếu action là start, tự động bắt đầu xử lý frames
+    if (action === 'start' && !config.skipFrameProcessing) {
+        console.log(
+            'Control action "start" sent - frame processing will be managed separately'
+        );
+    }
+
+    // Nếu action là stop, dừng xử lý frames
+    if (action === 'stop') {
+        stopFrameProcessing();
+    }
 
     return true;
 };
@@ -495,13 +500,10 @@ export const removeEventListener = (eventName, callback) => {
 
 // Đóng kết nối
 export const closeConnection = () => {
-    if (socket) {
-        // Xóa ping interval
-        if (pingInterval) {
-            clearInterval(pingInterval);
-            pingInterval = null;
-        }
+    // Dừng xử lý frames nếu đang chạy
+    stopFrameProcessing();
 
+    if (socket) {
         socket.disconnect();
         socket = null;
         isConnected = false;
@@ -515,6 +517,36 @@ export const closeConnection = () => {
         eventListeners[event] = [];
     });
 };
+
+// Thiết lập frame rate mới
+export const setFrameRate = (newFrameRate) => {
+    // Giới hạn frameRate trong khoảng 1-5
+    const limitedFrameRate = Math.min(Math.max(newFrameRate, 1), 5);
+
+    if (limitedFrameRate !== newFrameRate) {
+        console.log(
+            `Requested frame rate ${newFrameRate} FPS, but limited to ${limitedFrameRate} FPS`
+        );
+    }
+
+    frameRate = limitedFrameRate;
+    console.log(`Frame rate set to ${frameRate} FPS`);
+
+    // Nếu đang xử lý, khởi động lại với frame rate mới
+    if (isProcessing) {
+        stopFrameProcessing();
+        startFrameProcessing();
+    }
+
+    return frameRate;
+};
+
+// Lấy trạng thái frame processing
+export const getFrameProcessingState = () => ({
+    isProcessing,
+    frameRate,
+    frameCounter,
+});
 
 // Export các trạng thái
 export const getSocketState = () => ({
@@ -532,4 +564,8 @@ export default {
     removeEventListener,
     closeConnection,
     getSocketState,
+    startFrameProcessing,
+    stopFrameProcessing,
+    setFrameRate,
+    getFrameProcessingState,
 };

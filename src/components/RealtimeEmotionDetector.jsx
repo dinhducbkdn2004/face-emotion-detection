@@ -59,7 +59,8 @@ const RealtimeEmotionDetector = () => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const videoRef = useRef(null);
-    const canvasRef = useRef(null);
+    const canvasRef = useRef(null); // Canvas để chụp frame
+    const overlayCanvasRef = useRef(null); // Canvas để hiển thị bounding box
     const [stream, setStream] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [socketState, setSocketState] = useState({
@@ -70,14 +71,24 @@ const RealtimeEmotionDetector = () => {
     const [detectionResult, setDetectionResult] = useState(null);
     const [frameCounter, setFrameCounter] = useState(0);
     const animationRef = useRef(null);
+    const boundingBoxAnimationRef = useRef(null); // Ref cho animation frame của bounding box
     const lastFrameTimeRef = useRef(0);
-    const frameIntervalRef = useRef(100); // 10 FPS mặc định
-    const [fps, setFps] = useState(10);
+    const frameIntervalRef = useRef(200); // 5 FPS mặc định
+    const [fps, setFps] = useState(3); // Giá trị FPS mặc định là 3
     const [showSettings, setShowSettings] = useState(false);
     const [cameras, setCameras] = useState([]);
     const [selectedCamera, setSelectedCamera] = useState('');
     const [useMockData, setUseMockData] = useState(false);
     const mockIntervalRef = useRef(null);
+    const lastDetectionResultRef = useRef(null); // Lưu trữ kết quả mới nhất
+
+    // Thêm biến để lưu trữ vị trí bounding box trước đó và hiện tại
+    const previousBoxesRef = useRef({});
+    const currentBoxesRef = useRef({});
+    const lastUpdateTimeRef = useRef(0);
+
+    // Thêm biến để lưu trữ vận tốc của mỗi khuôn mặt
+    const facesVelocityRef = useRef({});
 
     // Kết nối socket.io khi component mount
     useEffect(() => {
@@ -134,7 +145,30 @@ const RealtimeEmotionDetector = () => {
 
     // Xử lý kết quả nhận diện
     const handleDetectionResult = (data) => {
+        // Cập nhật state cho UI
         setDetectionResult(data);
+
+        // Lưu trữ kết quả mới nhất
+        lastDetectionResultRef.current = data;
+
+        // Cập nhật ngay lập tức cho hệ thống nội suy
+        const now = performance.now();
+
+        // Lưu trữ vị trí hiện tại vào previousBoxes khi có kết quả mới
+        if (data && data.faces && data.faces.length > 0) {
+            previousBoxesRef.current = { ...currentBoxesRef.current };
+            currentBoxesRef.current = {
+                result: data,
+                faces: data.faces.map((face) => ({
+                    id: face.tracking_id || Math.random().toString(),
+                    box: [...face.box],
+                    emotions: face.emotions,
+                    timestamp: now,
+                })),
+                timestamp: now,
+            };
+            lastUpdateTimeRef.current = now;
+        }
     };
 
     // Xử lý thông báo lỗi
@@ -168,11 +202,11 @@ const RealtimeEmotionDetector = () => {
             const socket = await socketService.initializeSocket();
             if (socket) {
                 updateSocketState();
-                ToastService.success('Đã kết nối lại thành công');
+                ToastService.success('Reconnected successfully');
             }
         } catch (error) {
-            console.error('Lỗi khi kết nối lại:', error);
-            setError('Không thể kết nối lại. Vui lòng thử lại sau.');
+            console.error('Error reconnecting:', error);
+            setError('Cannot reconnect. Please try again later.');
         }
     };
 
@@ -191,7 +225,7 @@ const RealtimeEmotionDetector = () => {
                 setSelectedCamera(videoDevices[0].deviceId);
             }
         } catch (error) {
-            console.error('Lỗi khi lấy danh sách camera:', error);
+            console.error('Error getting camera list:', error);
         }
     };
 
@@ -243,9 +277,9 @@ const RealtimeEmotionDetector = () => {
                 });
             }
         } catch (err) {
-            console.error('Lỗi khi truy cập camera:', err);
+            console.error('Error accessing camera:', err);
             setError(
-                'Không thể truy cập camera. Vui lòng đảm bảo bạn đã cấp quyền truy cập camera.'
+                'Cannot access camera. Please ensure you have granted camera access.'
             );
         }
     };
@@ -347,10 +381,7 @@ const RealtimeEmotionDetector = () => {
         try {
             // Nếu sử dụng dữ liệu giả lập
             if (useMockData) {
-                console.log('Sử dụng dữ liệu giả lập, bỏ qua kết nối socket');
-
                 if (!stream) {
-                    console.log('Khởi tạo camera cho chế độ giả lập...');
                     await initializeCamera();
                 }
 
@@ -369,18 +400,19 @@ const RealtimeEmotionDetector = () => {
                     setDetectionResult(mockData);
                 }, 200); // Cập nhật kết quả mỗi 200ms
 
+                // Bắt đầu vòng lặp render bounding box
+                window.requestAnimationFrame(renderBoundingBoxes);
+
                 return;
             }
 
             // Tiếp tục với xử lý thông thường
             if (!socketState.isConnected) {
-                console.log('Socket chưa kết nối, đang thử kết nối...');
                 await socketService.initializeSocket();
                 updateSocketState();
             }
 
             if (!stream) {
-                console.log('Chưa có video stream, đang khởi tạo camera...');
                 await initializeCamera();
 
                 // Đợi một chút để camera khởi động hoàn toàn
@@ -389,66 +421,52 @@ const RealtimeEmotionDetector = () => {
 
             // Gửi lại trạng thái kết nối
             updateSocketState();
-            console.log(
-                'Trạng thái kết nối hiện tại:',
-                socketService.getSocketState()
-            );
+
+            // Nếu vẫn không kết nối được, chuyển sang chế độ giả lập
+            if (!socketState.isConnected) {
+                setUseMockData(true);
+                setError(null);
+                startProcessing(); // Gọi lại hàm với chế độ giả lập
+                return;
+            }
 
             // Khởi tạo session với server
             if (socketState.isConnected) {
-                console.log('Đang khởi tạo session trên server...');
                 socketService.initializeSession({
                     video_source: 'webcam',
-                    detection_interval: 5,
+                    detection_interval: Math.round(1000 / fps), // Chuyển FPS thành ms
                     min_face_size: 64,
                 });
 
                 // Đợi server phản hồi initialized (khoảng 1s)
-                console.log('Đang đợi server xác nhận khởi tạo...');
                 await new Promise((resolve) => setTimeout(resolve, 1000));
                 updateSocketState();
-            } else {
-                setError(
-                    'Không thể kết nối đến máy chủ. Vui lòng thử lại hoặc sử dụng chế độ demo.'
-                );
-                return;
             }
 
             // Gửi lệnh bắt đầu xử lý
-            console.log('Gửi lệnh start đến server...');
-            socketService.sendControl('start');
+            socketService.sendControl('start', { skipFrameProcessing: true });
 
-            // Bắt đầu gửi frames
-            console.log('Bắt đầu gửi video frames...');
+            // Bắt đầu gửi frames sử dụng socketService
             setIsProcessing(true);
             setFrameCounter(0);
-            startSendingFrames();
+            setError(null);
 
-            // Tạo một timeout để đảm bảo có kết quả
-            setTimeout(() => {
-                if (isProcessing && !detectionResult) {
-                    console.log(
-                        'Không nhận được kết quả sau 5s, kiểm tra lại...'
-                    );
+            // Bắt đầu vòng lặp render bounding box
+            window.requestAnimationFrame(renderBoundingBoxes);
 
-                    // Kiểm tra server đã phản hồi chưa
-                    socketService.sendControl('status', {
-                        check: true,
-                        timestamp: Date.now() / 1000,
-                    });
-                }
-            }, 5000);
+            // Sử dụng hàm xử lý frame mới từ socketService
+            socketService.startFrameProcessing(captureAndSendFrame);
         } catch (error) {
-            console.error('Lỗi khi bắt đầu xử lý:', error);
-            setError(`Lỗi khi bắt đầu: ${error.message}`);
+            // Chuyển sang chế độ giả lập
+            setUseMockData(true);
+            setError(null);
+            startProcessing(); // Gọi lại hàm với chế độ giả lập
         }
     };
 
     // Dừng xử lý
     const stopProcessing = () => {
         try {
-            console.log('Dừng xử lý...');
-
             // Dừng giả lập dữ liệu nếu đang dùng
             if (useMockData && mockIntervalRef.current) {
                 clearInterval(mockIntervalRef.current);
@@ -457,24 +475,29 @@ const RealtimeEmotionDetector = () => {
 
             // Tiếp tục xử lý thông thường
             if (socketState.isConnected) {
-                console.log('Gửi lệnh stop đến server');
                 socketService.sendControl('stop');
+                // socketService.stopFrameProcessing() sẽ được gọi tự động từ sendControl('stop')
             }
 
             setIsProcessing(false);
 
             // Dừng vòng lặp animation
             if (animationRef.current) {
-                console.log('Dừng animation frame');
                 window.cancelAnimationFrame(animationRef.current);
                 animationRef.current = null;
             }
+
+            // Dừng vòng lặp animation cho bounding box
+            if (boundingBoxAnimationRef.current) {
+                window.cancelAnimationFrame(boundingBoxAnimationRef.current);
+                boundingBoxAnimationRef.current = null;
+            }
         } catch (error) {
-            console.error('Lỗi khi dừng xử lý:', error);
+            console.error('Error stopping processing:', error);
         }
     };
 
-    // Bắt đầu gửi frames
+    // Bắt đầu gửi frames - chỉ sử dụng cho mock data
     const startSendingFrames = () => {
         // Đặt thời gian bắt đầu
         lastFrameTimeRef.current = performance.now();
@@ -509,7 +532,7 @@ const RealtimeEmotionDetector = () => {
         animationRef.current = window.requestAnimationFrame(sendFrame);
     };
 
-    // Chụp và gửi frame
+    // Chụp và gửi frame - được gọi bởi socketService.startFrameProcessing
     const captureAndSendFrame = () => {
         if (!canvasRef.current || !videoRef.current) return;
 
@@ -521,27 +544,184 @@ const RealtimeEmotionDetector = () => {
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 480;
 
-        // Vẽ frame từ video lên canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Chuyển canvas thành base64 (JPEG)
+        // Vẽ frame từ video lên canvas để chụp ảnh
         try {
+            // Xóa canvas và vẽ video
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Chuyển canvas thành base64 (JPEG)
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const base64Data = dataUrl.split(',')[1];
 
-            // Tăng bộ đếm frame
-            const currentFrame = frameCounter + 1;
-            setFrameCounter(currentFrame);
+            // Tăng bộ đếm frame và cập nhật UI
+            setFrameCounter((prev) => prev + 1);
 
-            // Gửi frame đến server
+            // Gửi frame đến server hoặc xử lý giả lập
+            if (useMockData) {
+                // Không cần gửi frame nếu đang giả lập
+                return;
+            }
+
             socketService.sendVideoFrame({
-                frame_id: currentFrame,
                 timestamp: Date.now() / 1000,
                 resolution: [canvas.width, canvas.height],
                 data: base64Data,
             });
         } catch (error) {
-            console.error('Lỗi khi chụp frame:', error);
+            console.error('Error capturing frame:', error);
+        }
+    };
+
+    // Hàm vẽ bounding boxes từ kết quả mới nhất với animation mượt mà và dự đoán vị trí
+    const renderBoundingBoxes = () => {
+        if (!overlayCanvasRef.current || !videoRef.current) return;
+
+        const canvas = overlayCanvasRef.current;
+        const video = videoRef.current;
+        const ctx = canvas.getContext('2d', {
+            alpha: true,
+            desynchronized: true,
+        });
+
+        // Đảm bảo overlay canvas có kích thước phù hợp với video
+        if (
+            canvas.width !== video.videoWidth ||
+            canvas.height !== video.videoHeight
+        ) {
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+        }
+
+        // Xóa canvas trước khi vẽ
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const now = performance.now();
+
+        // Tính tỷ lệ thu phóng nếu kích thước video và canvas khác nhau
+        const scaleX = canvas.width / (video.videoWidth || 640);
+        const scaleY = canvas.height / (video.videoHeight || 480);
+
+        // Nếu có dữ liệu để hiển thị
+        if (
+            currentBoxesRef.current.faces &&
+            currentBoxesRef.current.faces.length > 0
+        ) {
+            const elapsed = now - lastUpdateTimeRef.current;
+            const duration = 100; // Thời gian chuyển tiếp (ms)
+            const progress = Math.min(1, elapsed / duration); // Giá trị từ 0-1
+
+            // Kiểm tra xem đã quá lâu kể từ lần cập nhật cuối cùng hay chưa
+            const isStale = elapsed > 500; // Nếu quá 500ms không có cập nhật mới
+
+            currentBoxesRef.current.faces.forEach((face, index) => {
+                let x, y, boxWidth, boxHeight;
+
+                // Nếu có dữ liệu trước đó và cùng ID, thực hiện nội suy
+                const prevFace = previousBoxesRef.current.faces?.find(
+                    (pf) => pf.id === face.id
+                );
+
+                if (prevFace && progress < 1) {
+                    // Nội suy tuyến tính giữa vị trí cũ và mới
+                    const [prevX, prevY, prevWidth, prevHeight] = prevFace.box;
+                    const [newX, newY, newWidth, newHeight] = face.box;
+
+                    x = prevX + (newX - prevX) * progress;
+                    y = prevY + (newY - prevY) * progress;
+                    boxWidth = prevWidth + (newWidth - prevWidth) * progress;
+                    boxHeight =
+                        prevHeight + (newHeight - prevHeight) * progress;
+
+                    // Tính toán vận tốc di chuyển của khuôn mặt nếu có đủ dữ liệu
+                    if (prevFace && face.timestamp && prevFace.timestamp) {
+                        const dt = face.timestamp - prevFace.timestamp;
+                        if (dt > 0) {
+                            // Vận tốc = khoảng cách / thời gian
+                            const vx = (newX - prevX) / dt;
+                            const vy = (newY - prevY) / dt;
+
+                            // Lưu vận tốc cho mỗi khuôn mặt
+                            facesVelocityRef.current[face.id] = {
+                                vx,
+                                vy,
+                                timestamp: now,
+                            };
+                        }
+                    }
+                } else if (isStale && facesVelocityRef.current[face.id]) {
+                    // Nếu không có dữ liệu mới trong thời gian dài, dự đoán vị trí dựa trên vận tốc
+                    const velocity = facesVelocityRef.current[face.id];
+                    const timeSinceLastUpdate =
+                        (now - lastUpdateTimeRef.current) / 1000; // Đổi sang giây
+
+                    // Giới hạn thời gian dự đoán để tránh dự đoán quá xa
+                    const maxPredictionTime = 0.5; // Tối đa 0.5 giây
+                    const predictionTime = Math.min(
+                        timeSinceLastUpdate,
+                        maxPredictionTime
+                    );
+
+                    // Dự đoán vị trí mới dựa trên vận tốc
+                    [x, y, boxWidth, boxHeight] = face.box;
+                    x += velocity.vx * predictionTime;
+                    y += velocity.vy * predictionTime;
+
+                    // Giới hạn vị trí trong canvas
+                    x = Math.max(0, Math.min(x, canvas.width - boxWidth));
+                    y = Math.max(0, Math.min(y, canvas.height - boxHeight));
+                } else {
+                    // Nếu không có dữ liệu trước đó hoặc đã hoàn thành nội suy
+                    [x, y, boxWidth, boxHeight] = face.box;
+                }
+
+                // Áp dụng tỷ lệ thu phóng
+                const scaledX = x * scaleX;
+                const scaledY = y * scaleY;
+                const scaledWidth = boxWidth * scaleX;
+                const scaledHeight = boxHeight * scaleY;
+
+                // Vẽ hộp với hiệu ứng mượt mà hơn
+                ctx.strokeStyle = '#4caf50';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(scaledX, scaledY, scaledWidth, scaledHeight);
+                ctx.stroke();
+
+                // Thêm hiệu ứng shadow nhẹ để nổi bật
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                // Vẽ cảm xúc chính
+                if (face.emotions && face.emotions.length > 0) {
+                    const mainEmotion = face.emotions[0];
+
+                    // Nền cho text
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(scaledX, scaledY - 25, scaledWidth, 25);
+
+                    // Text cảm xúc
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.shadowColor = 'transparent'; // Xóa shadow cho text
+                    ctx.fillText(
+                        `${mainEmotion.emotion}: ${Math.round(
+                            mainEmotion.percentage || mainEmotion.score * 100
+                        )}%`,
+                        scaledX + scaledWidth / 2,
+                        scaledY - 8
+                    );
+                }
+            });
+        }
+
+        // Yêu cầu render liên tục để bounding box mượt mà
+        if (isProcessing) {
+            boundingBoxAnimationRef.current =
+                window.requestAnimationFrame(renderBoundingBoxes);
         }
     };
 
@@ -558,7 +738,59 @@ const RealtimeEmotionDetector = () => {
 
         // Đóng kết nối socket
         socketService.closeConnection();
+
+        // Dừng animation nếu đang chạy
+        if (animationRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            animationRef.current = null;
+        }
+
+        // Dừng animation cho bounding box nếu đang chạy
+        if (boundingBoxAnimationRef.current) {
+            cancelAnimationFrame(boundingBoxAnimationRef.current);
+            boundingBoxAnimationRef.current = null;
+        }
     };
+
+    // Khởi tạo video và đảm bảo kích thước canvas được cập nhật
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => {
+                if (overlayCanvasRef.current && videoRef.current) {
+                    overlayCanvasRef.current.width =
+                        videoRef.current.videoWidth || 640;
+                    overlayCanvasRef.current.height =
+                        videoRef.current.videoHeight || 480;
+                }
+
+                if (canvasRef.current && videoRef.current) {
+                    canvasRef.current.width =
+                        videoRef.current.videoWidth || 640;
+                    canvasRef.current.height =
+                        videoRef.current.videoHeight || 480;
+                }
+            };
+        }
+    }, [videoRef.current, stream]);
+
+    // Cập nhật bounding box khi có kết quả nhận diện mới
+    useEffect(() => {
+        if (detectionResult && overlayCanvasRef.current && videoRef.current) {
+            renderBoundingBoxes();
+        }
+    }, [detectionResult]);
+
+    // Clean up khi component unmount
+    useEffect(() => {
+        return () => {
+            cleanupResources();
+            // Dừng giả lập dữ liệu nếu đang dùng
+            if (mockIntervalRef.current) {
+                clearInterval(mockIntervalRef.current);
+                mockIntervalRef.current = null;
+            }
+        };
+    }, []);
 
     // Chuyển đổi dữ liệu cảm xúc thành dạng dễ hiển thị
     const formatEmotions = (emotions) => {
@@ -574,100 +806,12 @@ const RealtimeEmotionDetector = () => {
     const handleFpsChange = (event, newValue) => {
         setFps(newValue);
         frameIntervalRef.current = 1000 / newValue;
+
+        // Cập nhật frame rate trong socketService nếu đang kết nối
+        if (socketState.isConnected) {
+            socketService.setFrameRate(newValue);
+        }
     };
-
-    // Vẽ hộp nhận diện khuôn mặt lên video
-    useEffect(() => {
-        // Nếu không có video hoặc canvas, thoát
-        if (!canvasRef.current || !videoRef.current) return;
-
-        const canvas = canvasRef.current;
-        const video = videoRef.current;
-        const ctx = canvas.getContext('2d');
-
-        // Đảm bảo canvas có kích thước phù hợp với video
-        canvas.width = video.videoWidth || 640;
-        canvas.height = video.videoHeight || 480;
-
-        // Clear canvas trước khi vẽ
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Vẽ frame video lên canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        // Nếu có kết quả nhận diện, vẽ thêm hộp và thông tin
-        if (detectionResult && detectionResult.faces) {
-            detectionResult.faces.forEach((face) => {
-                const [x, y, width, height] = face.box;
-
-                // Vẽ hộp
-                ctx.strokeStyle = '#4caf50';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x, y, width, height);
-
-                // Vẽ cảm xúc chính
-                if (face.emotions && face.emotions.length > 0) {
-                    const mainEmotion = face.emotions[0];
-
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(x, y - 25, width, 25);
-
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = '14px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText(
-                        `${mainEmotion.emotion}: ${Math.round(mainEmotion.percentage || mainEmotion.score * 100)}%`,
-                        x + width / 2,
-                        y - 8
-                    );
-                }
-            });
-        }
-    }, [
-        detectionResult,
-        videoRef.current?.videoWidth,
-        videoRef.current?.videoHeight,
-    ]);
-
-    // Render canvas mỗi khi video có frame mới (ngay cả khi không có kết quả nhận diện)
-    useEffect(() => {
-        if (!canvasRef.current || !videoRef.current) return;
-
-        const renderVideo = () => {
-            if (!isProcessing) return;
-
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-            if (canvas && video && video.readyState >= 2) {
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            }
-
-            animationRef.current = requestAnimationFrame(renderVideo);
-        };
-
-        if (isProcessing) {
-            animationRef.current = requestAnimationFrame(renderVideo);
-        }
-
-        return () => {
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
-            }
-        };
-    }, [isProcessing]);
-
-    // Clean up khi component unmount
-    useEffect(() => {
-        return () => {
-            cleanupResources();
-            // Dừng giả lập dữ liệu nếu đang dùng
-            if (mockIntervalRef.current) {
-                clearInterval(mockIntervalRef.current);
-                mockIntervalRef.current = null;
-            }
-        };
-    }, []);
 
     return (
         <Box>
@@ -682,12 +826,11 @@ const RealtimeEmotionDetector = () => {
             >
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" fontWeight="medium" gutterBottom>
-                        Nhận diện cảm xúc Realtime
+                        Real-time emotion detection
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Sử dụng webcam để nhận diện cảm xúc theo thời gian thực.
-                        Hãy đảm bảo bạn đã cấp quyền truy cập camera cho trang
-                        web.
+                        Use webcam to detect emotions in real-time. Ensure you
+                        have granted camera access to the web page.
                     </Typography>
                 </Box>
 
@@ -707,7 +850,7 @@ const RealtimeEmotionDetector = () => {
                                         }}
                                         sx={{ mr: 1 }}
                                     >
-                                        Dùng chế độ Demo
+                                        Use Demo mode
                                     </Button>
                                 )}
                                 <IconButton
@@ -731,15 +874,15 @@ const RealtimeEmotionDetector = () => {
                         sx={{ mb: 2 }}
                         icon={<CircularProgress size={20} />}
                     >
-                        Đang kết nối đến máy chủ. Vui lòng đợi...
+                        Connecting to server. Please wait...
                     </Alert>
                 )}
 
                 {/* Hiển thị thông báo khi dùng chế độ demo */}
                 {useMockData && (
                     <Alert severity="warning" sx={{ mb: 2 }}>
-                        Đang sử dụng chế độ Demo. Dữ liệu nhận diện được tạo
-                        ngẫu nhiên.
+                        Using Demo mode. The recognition data is randomly
+                        generated.
                     </Alert>
                 )}
 
@@ -756,19 +899,12 @@ const RealtimeEmotionDetector = () => {
                         border: `2px solid ${theme.palette.divider}`,
                     }}
                 >
+                    {/* Video Stream */}
                     <video
                         ref={videoRef}
                         autoPlay
                         playsInline
                         muted
-                        onLoadedMetadata={() => {
-                            if (canvasRef.current && videoRef.current) {
-                                canvasRef.current.width =
-                                    videoRef.current.videoWidth || 640;
-                                canvasRef.current.height =
-                                    videoRef.current.videoHeight || 480;
-                            }
-                        }}
                         style={{
                             position: 'absolute',
                             width: '100%',
@@ -777,14 +913,25 @@ const RealtimeEmotionDetector = () => {
                             zIndex: 1,
                         }}
                     />
+
+                    {/* Canvas cho việc chụp frame (ẩn) */}
                     <canvas
                         ref={canvasRef}
+                        style={{
+                            display: 'none', // Ẩn canvas này vì chỉ dùng để chụp frame
+                        }}
+                    />
+
+                    {/* Canvas overlay cho bounding box */}
+                    <canvas
+                        ref={overlayCanvasRef}
                         style={{
                             position: 'absolute',
                             width: '100%',
                             height: '100%',
                             objectFit: 'cover',
                             zIndex: 2,
+                            pointerEvents: 'none', // Cho phép tương tác với video bên dưới
                         }}
                     />
 
@@ -805,10 +952,10 @@ const RealtimeEmotionDetector = () => {
                     >
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                             {detectionResult
-                                ? `Khuôn mặt: ${detectionResult.faces?.length || 0}`
+                                ? `Face: ${detectionResult.faces?.length || 0}`
                                 : isProcessing
-                                  ? 'Đang phân tích...'
-                                  : 'Chưa phân tích'}
+                                  ? 'Analyzing...'
+                                  : 'Not analyzed'}
                         </Typography>
                         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                             FPS: {fps}
@@ -831,7 +978,7 @@ const RealtimeEmotionDetector = () => {
                         >
                             <SpeedOutlined sx={{ mr: 1 }} />
                             <Typography variant="body2">
-                                Tốc độ khung hình (FPS): {fps}
+                                Frame rate (FPS): {fps}
                             </Typography>
                         </Box>
                         <Slider
@@ -839,13 +986,14 @@ const RealtimeEmotionDetector = () => {
                             onChange={handleFpsChange}
                             aria-label="FPS"
                             min={1}
-                            max={30}
+                            max={5}
                             step={1}
                             marks={[
                                 { value: 1, label: '1' },
-                                { value: 10, label: '10' },
-                                { value: 20, label: '20' },
-                                { value: 30, label: '30' },
+                                { value: 2, label: '2' },
+                                { value: 3, label: '3' },
+                                { value: 4, label: '4' },
+                                { value: 5, label: '5' },
                             ]}
                             disabled={isProcessing}
                         />
@@ -854,12 +1002,12 @@ const RealtimeEmotionDetector = () => {
                             <Box sx={{ mt: 2 }}>
                                 <FormControl fullWidth size="small">
                                     <InputLabel id="camera-select-label">
-                                        Chọn Camera
+                                        Select Camera
                                     </InputLabel>
                                     <Select
                                         labelId="camera-select-label"
                                         value={selectedCamera}
-                                        label="Chọn Camera"
+                                        label="Select Camera"
                                         onChange={handleCameraChange}
                                         disabled={isProcessing}
                                         startAdornment={
@@ -910,7 +1058,7 @@ const RealtimeEmotionDetector = () => {
                                             }}
                                         />
                                         <Typography variant="body2">
-                                            Chế độ demo (không cần server)
+                                            Demo mode (no server required)
                                         </Typography>
                                     </Box>
                                 }
@@ -921,8 +1069,8 @@ const RealtimeEmotionDetector = () => {
                                     color="warning.main"
                                     sx={{ mt: 1, display: 'block' }}
                                 >
-                                    Chế độ này giả lập dữ liệu nhận diện khi
-                                    không có server.
+                                    This mode simulates data recognition when
+                                    there is no server.
                                 </Typography>
                             )}
                         </Box>
@@ -932,9 +1080,8 @@ const RealtimeEmotionDetector = () => {
                             color="text.secondary"
                             fontSize="0.8rem"
                         >
-                            Lưu ý: Tốc độ càng cao càng tiêu tốn nhiều tài
-                            nguyên máy chủ và mạng. Server có thể yêu cầu giảm
-                            FPS nếu quá tải.
+                            Note: The frame rate is limited from 1-5 FPS to
+                            ensure the best performance.
                         </Typography>
                     </Paper>
                 </Collapse>
@@ -943,8 +1090,8 @@ const RealtimeEmotionDetector = () => {
                     <Chip
                         label={
                             socketState.isConnected
-                                ? 'Đã kết nối'
-                                : 'Chưa kết nối'
+                                ? 'Connected'
+                                : 'Not connected'
                         }
                         color={socketState.isConnected ? 'success' : 'error'}
                         size="small"
@@ -957,7 +1104,7 @@ const RealtimeEmotionDetector = () => {
                     />
                     {isProcessing && (
                         <Chip
-                            label="Đang nhận diện"
+                            label="Analyzing"
                             color="warning"
                             size="small"
                             icon={
@@ -980,7 +1127,7 @@ const RealtimeEmotionDetector = () => {
                         onClick={() => setShowSettings(!showSettings)}
                         startIcon={<Settings />}
                     >
-                        {showSettings ? 'Ẩn cài đặt' : 'Cài đặt'}
+                        {showSettings ? 'Hide settings' : 'Settings'}
                     </Button>
 
                     {cameras.length > 1 && !showSettings && (
@@ -991,7 +1138,7 @@ const RealtimeEmotionDetector = () => {
                             startIcon={<SwitchCamera />}
                             disabled={isProcessing}
                         >
-                            Đổi Camera
+                            Change Camera
                         </Button>
                     )}
 
@@ -1002,7 +1149,7 @@ const RealtimeEmotionDetector = () => {
                             onClick={reconnectSocket}
                             startIcon={<MeetingRoom />}
                         >
-                            Kết nối lại Server
+                            Reconnect Server
                         </Button>
                     )}
 
@@ -1012,7 +1159,7 @@ const RealtimeEmotionDetector = () => {
                         startIcon={<MeetingRoom />}
                         disabled={isProcessing}
                     >
-                        {stream ? 'Làm mới Camera' : 'Kết nối Camera'}
+                        {stream ? 'Refresh Camera' : 'Connect Camera'}
                     </Button>
 
                     {!isProcessing ? (
@@ -1026,7 +1173,7 @@ const RealtimeEmotionDetector = () => {
                                 !stream
                             }
                         >
-                            Bắt đầu nhận diện
+                            Start recognition
                         </Button>
                     ) : (
                         <Button
@@ -1035,7 +1182,7 @@ const RealtimeEmotionDetector = () => {
                             onClick={stopProcessing}
                             startIcon={<Stop />}
                         >
-                            Dừng nhận diện
+                            Stop recognition
                         </Button>
                     )}
                 </Box>
@@ -1070,7 +1217,7 @@ const RealtimeEmotionDetector = () => {
                                     mr: 1,
                                 }}
                             />
-                            Kết quả nhận diện realtime
+                            Real-time recognition result
                         </Typography>
 
                         <Stack spacing={2}>
@@ -1103,7 +1250,7 @@ const RealtimeEmotionDetector = () => {
                                                 variant="subtitle1"
                                                 fontWeight="bold"
                                             >
-                                                Khuôn mặt #{index + 1}
+                                                Face #{index + 1}
                                             </Typography>
                                             <Chip
                                                 label={`${mainEmotion?.name || 'unknown'}: ${Math.round(mainEmotion?.percentage || 0)}%`}
@@ -1119,7 +1266,7 @@ const RealtimeEmotionDetector = () => {
                                                 color="text.secondary"
                                                 sx={{ mb: 0.5 }}
                                             >
-                                                Phân tích cảm xúc:
+                                                Emotion analysis:
                                             </Typography>
                                             <Box
                                                 sx={{
