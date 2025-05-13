@@ -159,7 +159,7 @@ apiClient.interceptors.response.use(
             }
         }
 
-        // Nếu token hết hạn (status 401) và có refresh token
+        // Kiểm tra token hết hạn và có refresh token
         if (
             error.response &&
             error.response.status === 401 &&
