@@ -26,9 +26,9 @@ const ErrorMessage = ({
     };
 
     const titles = {
-        error: 'Đã xảy ra lỗi',
-        warning: 'Cảnh báo',
-        connection: 'Lỗi kết nối',
+        error: 'An error occurred',
+        warning: 'Warning',
+        connection: 'Connection error',
     };
 
     const colors = {

@@ -332,28 +332,28 @@ export default function Home() {
                     </Typography>
                     {isAuthenticated && (
                         <Box
-                        sx={{
-                            mt: 4,
-                            display: 'flex',
-                            flexDirection: isMobile ? 'column' : 'row',
-                            gap: 2,
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Button
-                            variant="contained"
-                            size="large"
-                            color="primary"
-                            onClick={() => navigate('/dashboard')}
                             sx={{
-                                py: 1.5,
-                                px: 4,
-                                borderRadius: 2,
-                                fontWeight: 'bold',
-                                boxShadow: 4,
+                                mt: 4,
+                                display: 'flex',
+                                flexDirection: isMobile ? 'column' : 'row',
+                                gap: 2,
+                                justifyContent: 'center',
                             }}
                         >
-                            Go to Dashboard
+                            <Button
+                                variant="contained"
+                                size="large"
+                                color="primary"
+                                onClick={() => navigate('/dashboard')}
+                                sx={{
+                                    py: 1.5,
+                                    px: 4,
+                                    borderRadius: 2,
+                                    fontWeight: 'bold',
+                                    boxShadow: 4,
+                                }}
+                            >
+                                Go to Dashboard
                             </Button>
                         </Box>
                     )}

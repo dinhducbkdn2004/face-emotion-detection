@@ -35,17 +35,17 @@ const EmotionResults = ({ result, loading, error, previewUrl, onRetry }) => {
     if (error) {
         // Xác định loại lỗi
         let errorType = 'error';
-        let errorMessage = 'Có lỗi xảy ra khi phân tích cảm xúc. Vui lòng thử lại.';
+        let errorMessage = 'An error occurred while analyzing emotions. Please try again.';
         
         if (error.code === 'ECONNABORTED') {
             errorType = 'connection';
-            errorMessage = 'Quá thời gian xử lý. Máy chủ đang bận, vui lòng thử lại sau.';
+            errorMessage = 'Processing timeout. The server is busy, please try again later.';
         } else if (error.message?.includes('Network Error') || error.message?.includes('connect')) {
             errorType = 'connection';
-            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng của bạn.';
+            errorMessage = 'Cannot connect to server. Please check your network connection.';
         } else if (error.response?.status === 403) {
             errorType = 'warning';
-            errorMessage = 'Bạn đã hết lượt dùng thử. Vui lòng đăng nhập hoặc đăng ký tài khoản để tiếp tục.';
+            errorMessage = 'You have reached the limit of your free trial. Please login or register an account to continue.';
         } else if (error.response?.data?.message) {
             errorMessage = error.response.data.message;
         }
@@ -98,7 +98,7 @@ const EmotionResults = ({ result, loading, error, previewUrl, onRetry }) => {
                 }}
                 variant="filled"
             >
-                Không nhận diện được khuôn mặt trong ảnh này
+                No face detected in this image
             </Alert>
         );
     }

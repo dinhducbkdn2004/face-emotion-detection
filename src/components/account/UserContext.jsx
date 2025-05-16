@@ -4,7 +4,6 @@ import {
     onAuthStateChange,
     logout,
     verifyTokenWithBackend,
-    getUserProfile,
 } from '../../services/authService';
 
 // Tạo context
@@ -28,9 +27,6 @@ export const UserProvider = ({ children }) => {
     const { user, isAuthenticated } = useSelector((state) => state.auth);
     const [backendProfile, setBackendProfile] = useState(null);
     const [backendVerified, setBackendVerified] = useState(false);
-    const [isGuest, setIsGuest] = useState(false);
-    const [usageCount, setUsageCount] = useState(0);
-    const [maxUsage, setMaxUsage] = useState(null);
     const dispatch = useDispatch();
 
     // Lắng nghe sự thay đổi trạng thái xác thực từ Firebase
@@ -60,9 +56,6 @@ export const UserProvider = ({ children }) => {
                         // Lưu thông tin hồ sơ từ backend
                         if (response.user) {
                             setBackendProfile(response.user);
-                            setIsGuest(response.user.is_guest || false);
-                            setUsageCount(response.user.usage_count || 0);
-                            setMaxUsage(response.user.max_usage || null);
                         }
                     }
                 } catch (error) {
@@ -70,33 +63,9 @@ export const UserProvider = ({ children }) => {
                     setBackendVerified(false);
                 }
             } else {
-                console.log('Không có user Firebase, thử chế độ khách');
+                console.log('Không có user Firebase');
                 setBackendVerified(false);
                 setBackendProfile(null);
-
-                // Thử lấy thông tin khách
-                try {
-                    // Dùng hàm getUserProfile để lấy thông tin guest
-                    const profile = await getUserProfile();
-
-                    if (profile) {
-                        setIsGuest(profile.is_guest || false);
-                        setUsageCount(profile.usage_count || 0);
-                        setMaxUsage(profile.max_usage || null);
-                        // Thêm ghi nhận thông tin profile
-                        setBackendProfile(profile);
-                    }
-                } catch (error) {
-                    console.error(
-                        'Lỗi khi kiểm tra thông tin người dùng khách:',
-                        error
-                    );
-                    // Reset trạng thái nếu không lấy được thông tin người dùng khách
-                    setIsGuest(false);
-                    setUsageCount(0);
-                    setMaxUsage(null);
-                    setBackendProfile(null);
-                }
             }
         };
 
@@ -109,9 +78,8 @@ export const UserProvider = ({ children }) => {
             await logout(dispatch);
             setBackendVerified(false);
             setBackendProfile(null);
-            // Xóa guestId khi đăng xuất
-            localStorage.removeItem('guestId');
             localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
             return true;
         } catch (error) {
             console.error('Lỗi khi đăng xuất:', error);
@@ -125,9 +93,6 @@ export const UserProvider = ({ children }) => {
         isAuthenticated,
         backendProfile,
         backendVerified,
-        isGuest,
-        usageCount,
-        maxUsage,
         signOut,
     };
 
