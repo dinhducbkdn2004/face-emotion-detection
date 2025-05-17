@@ -22,6 +22,10 @@ const FaceBoxOverlay = ({ imageUrl, faces, onFaceClick }) => {
         width: 0,
         height: 0,
     });
+    const [originalDimensions, setOriginalDimensions] = useState({
+        width: 0,
+        height: 0,
+    });
     const [containerDimensions, setContainerDimensions] = useState({
         width: 0,
         height: 0,
@@ -56,6 +60,12 @@ const FaceBoxOverlay = ({ imageUrl, faces, onFaceClick }) => {
             setImageDimensions({
                 width: imageRef.current.offsetWidth,
                 height: imageRef.current.offsetHeight,
+            });
+
+            // Kích thước gốc của ảnh
+            setOriginalDimensions({
+                width: imageRef.current.naturalWidth,
+                height: imageRef.current.naturalHeight,
             });
 
             // Kích thước của container
@@ -100,18 +110,15 @@ const FaceBoxOverlay = ({ imageUrl, faces, onFaceClick }) => {
 
     // Tính toán tỷ lệ thu phóng - chỉ tính lại khi cần thiết
     const { scaleX, scaleY } = useMemo(() => {
-        if (!loaded || !faces?.length) return { scaleX: 1, scaleY: 1 };
+        if (!loaded || !faces?.length || !originalDimensions.width || !originalDimensions.height) 
+            return { scaleX: 1, scaleY: 1 };
 
-        // Lấy kích thước ảnh gốc từ meta của face (nếu có)
-        const originalWidth = 640; // Giả định kích thước ảnh gốc
-        const originalHeight = 480; // Giả định kích thước ảnh gốc
-
-        // Tính tỷ lệ thu phóng
-        const scaleX = imageDimensions.width / originalWidth;
-        const scaleY = imageDimensions.height / originalHeight;
+        // Tính tỷ lệ thu phóng dựa trên kích thước ảnh gốc
+        const scaleX = imageDimensions.width / originalDimensions.width;
+        const scaleY = imageDimensions.height / originalDimensions.height;
 
         return { scaleX, scaleY };
-    }, [loaded, faces, imageDimensions]);
+    }, [loaded, faces, imageDimensions, originalDimensions]);
 
     // Xử lý khi nhấp vào bounding box
     const handleFaceClick = useCallback(

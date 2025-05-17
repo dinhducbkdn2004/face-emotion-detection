@@ -160,17 +160,18 @@ export default function EmotionDisplay({ detectionData, loading, error }) {
         const [x, y, width, height] = box;
 
         // Nếu chưa có kích thước image thì trả về giá trị mặc định
-        if (imageSize.width === 0)
+        if (imageSize.width === 0 || !imageElement)
             return { left: 0, top: 0, width: 0, height: 0 };
 
-        // Tỷ lệ khung ảnh hiển thị / ảnh gốc (giả định tỷ lệ bằng nhau theo chiều rộng)
-        const ratio = imageSize.width / imageElement.naturalWidth;
+        // Tính tỷ lệ scale dựa trên kích thước ảnh hiển thị và ảnh gốc
+        const scaleX = imageSize.width / imageElement.naturalWidth;
+        const scaleY = imageSize.height / imageElement.naturalHeight;
 
         return {
-            left: x * ratio,
-            top: y * ratio,
-            width: width * ratio,
-            height: height * ratio,
+            left: x * scaleX,
+            top: y * scaleY,
+            width: width * scaleX,
+            height: height * scaleY,
         };
     };
 

@@ -416,7 +416,7 @@ export default function Home() {
                                         color: theme.palette.success.main,
                                         '&:hover': {
                                             borderColor:
-                                                theme.palette.success.dark,
+                                                'gray',
                                             backgroundColor:
                                                 theme.palette.success.light,
                                             color: 'white',

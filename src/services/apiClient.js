@@ -15,8 +15,8 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    // Xóa withCredentials để tránh lỗi CORS khi máy chủ trả về Access-Control-Allow-Origin: *
-    withCredentials: false,
+    // Thêm withCredentials để gửi kèm cookie khi gọi API
+    withCredentials: true,
 });
 
 // Biến lưu trữ JWT token khi xác thực với backend

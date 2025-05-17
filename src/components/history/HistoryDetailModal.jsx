@@ -122,19 +122,27 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
 
         const updateDimensions = () => {
             if (imageRef.current && containerRef.current) {
-                // Kích thước thực tế của ảnh đã được render
-                setImageDimensions({
-                    width: imageRef.current.offsetWidth,
-                    height: imageRef.current.offsetHeight,
-                });
+                // Chờ một chút để đảm bảo ảnh đã được render hoàn toàn
+                setTimeout(() => {
+                    // Kích thước thực tế của ảnh đã được render
+                    setImageDimensions({
+                        width: imageRef.current.offsetWidth,
+                        height: imageRef.current.offsetHeight,
+                    });
 
-                // Kích thước của container
-                setContainerDimensions({
-                    width: containerRef.current.offsetWidth,
-                    height: containerRef.current.offsetHeight,
-                });
+                    // Kích thước của container
+                    setContainerDimensions({
+                        width: containerRef.current.offsetWidth,
+                        height: containerRef.current.offsetHeight,
+                    });
+                }, 100);
             }
         };
+
+        // Tạo một Image object mới để lấy kích thước thực
+        const img = new Image();
+        img.onload = updateDimensions;
+        img.src = detailData.image_url;
 
         // Cập nhật kích thước khi ảnh được tải
         if (imageRef.current) {
@@ -387,24 +395,57 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                             const offsetTop =
                                 (containerDimensions.height - imageHeight) / 2;
 
-                            // Tính tỷ lệ thu phóng của ảnh so với kích thước gốc
-                            // Giả sử kích thước gốc của ảnh là 640x480
-                            // Điều chỉnh các giá trị này dựa trên kích thước thực tế của ảnh gốc
-                            const originalWidth = 640; // Điều chỉnh dựa trên kích thước thực tế của ảnh gốc
-                            const originalHeight = 480; // Điều chỉnh dựa trên kích thước thực tế của ảnh gốc
+                            // Lấy kích thước thực tế của ảnh gốc với kiểm tra null
+                            let originalWidth = 640; // Giá trị mặc định
+                            let originalHeight = 480; // Giá trị mặc định
 
+                            if (
+                                imageRef.current &&
+                                imageRef.current.naturalWidth &&
+                                imageRef.current.naturalHeight
+                            ) {
+                                originalWidth = imageRef.current.naturalWidth;
+                                originalHeight = imageRef.current.naturalHeight;
+                            }
+
+                            // Tính toán tỉ lệ scale
                             const scaleX = imageWidth / originalWidth;
                             const scaleY = imageHeight / originalHeight;
+
+                            // Áp dụng phép biến đổi tọa độ
+                            // Đảm bảo box không vượt ra ngoài kích thước ảnh
+                            const boxLeft = Math.max(
+                                0,
+                                Math.min(
+                                    offsetLeft + x * scaleX,
+                                    offsetLeft + imageWidth
+                                )
+                            );
+                            const boxTop = Math.max(
+                                0,
+                                Math.min(
+                                    offsetTop + y * scaleY,
+                                    offsetTop + imageHeight
+                                )
+                            );
+                            const boxWidth = Math.min(
+                                width * scaleX,
+                                imageWidth - (boxLeft - offsetLeft)
+                            );
+                            const boxHeight = Math.min(
+                                height * scaleY,
+                                imageHeight - (boxTop - offsetTop)
+                            );
 
                             return (
                                 <Box
                                     key={index}
                                     sx={{
                                         position: 'absolute',
-                                        left: `${offsetLeft + x * scaleX}px`,
-                                        top: `${offsetTop + y * scaleY}px`,
-                                        width: `${width * scaleX}px`,
-                                        height: `${height * scaleY}px`,
+                                        left: `${boxLeft}px`,
+                                        top: `${boxTop}px`,
+                                        width: `${boxWidth}px`,
+                                        height: `${boxHeight}px`,
                                         border: `2px solid ${boxColor}`,
                                         borderRadius: '4px',
                                         transition: 'all 0.3s ease',
@@ -426,8 +467,8 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                     <Box
                                         sx={{
                                             position: 'absolute',
-                                            top: '-14px',
-                                            left: '2px',
+                                            top: `${boxTop > 16 ? -14 : 2}px`,
+                                            left: `${boxLeft > 16 ? 2 : boxWidth > 30 ? 2 : 0}px`,
                                             minWidth: '24px',
                                             height: '24px',
                                             backgroundColor: boxColor,
@@ -452,7 +493,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                             <Box
                                                 sx={{
                                                     position: 'absolute',
-                                                    top: `${height * scaleY + 5}px`,
+                                                    top: `${boxHeight + 5}px`,
                                                     left: 0,
                                                     backgroundColor:
                                                         'rgba(0,0,0,0.75)',
@@ -464,6 +505,9 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                                     whiteSpace: 'nowrap',
                                                     boxShadow:
                                                         '0 2px 5px rgba(0,0,0,0.2)',
+                                                    maxWidth: '160px',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
                                                 }}
                                             >
                                                 {primaryEmotion.emotion

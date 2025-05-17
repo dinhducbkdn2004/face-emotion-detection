@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Box } from '@mui/material';
 import { useUser } from './components/account/UserContext';
+import { useEffect } from 'react';
 import Navbar from './components/layout/Navbar';
 import LoginPage from './pages/Login/Login';
 import RegisterPage from './pages/Register/Register';
@@ -37,6 +38,14 @@ const PublicOnlyRoute = ({ children }) => {
 };
 
 function App() {
+    useEffect(() => {
+        // Gọi API kiểm tra cookie mỗi khi trang được load
+        fetch('https://ped.ldblckrs.id.vn/auth/profile', {
+            method: 'GET',
+            credentials: 'include',
+        });
+    }, []);
+
     return (
         <Box
             sx={{
