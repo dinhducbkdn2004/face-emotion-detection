@@ -15,7 +15,6 @@ import History from './pages/History/History';
 import HistoryDetail from './pages/History/HistoryDetail';
 import Guest from './pages/Guest/Guest';
 
-// Protected Route component
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useUser();
 
@@ -26,7 +25,6 @@ const ProtectedRoute = ({ children }) => {
     return children;
 };
 
-// Public Only Route - chuyển hướng nếu đã đăng nhập
 const PublicOnlyRoute = ({ children }) => {
     const { isAuthenticated } = useUser();
 
@@ -39,7 +37,6 @@ const PublicOnlyRoute = ({ children }) => {
 
 function App() {
     useEffect(() => {
-        // Gọi API kiểm tra cookie mỗi khi trang được load
         fetch('https://ped.ldblckrs.id.vn/auth/profile', {
             method: 'GET',
             credentials: 'include',
