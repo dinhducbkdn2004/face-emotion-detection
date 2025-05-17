@@ -10,6 +10,7 @@ import {
     Tooltip,
     useTheme,
     Stack,
+    useMediaQuery,
 } from '@mui/material';
 import {
     Visibility as VisibilityIcon,
@@ -19,6 +20,7 @@ import {
     ImageNotSupported,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { alpha } from '@mui/material/styles';
 
 const emotionColors = {
     happy: '#4caf50',
@@ -33,6 +35,7 @@ const emotionColors = {
 
 const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     const mainEmotion = item.main_emotion?.toLowerCase() || 'neutral';
     const emotionColor =
@@ -44,6 +47,7 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
             variant="outlined"
             sx={{
                 height: '100%',
+                width: '100%',
                 display: 'flex',
                 flexDirection: viewMode === 'list' ? 'row' : 'column',
                 borderRadius: 3,
@@ -53,17 +57,31 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                 '&:hover': {
                     boxShadow: `0 4px 20px 0 ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.15)'}`,
                     borderColor: emotionColor,
+                    transform: 'translateY(-2px)',
                 },
                 userSelect: 'none',
                 cursor: 'default',
+                maxWidth: isMobile ? '100%' : 'auto',
             }}
         >
             {/* Image Container */}
             <Box
                 sx={{
                     position: 'relative',
-                    width: viewMode === 'list' ? 200 : '100%',
-                    height: viewMode === 'list' ? 200 : 200,
+                    width:
+                        viewMode === 'list'
+                            ? isMobile
+                                ? '120px'
+                                : '200px'
+                            : '100%',
+                    height:
+                        viewMode === 'list'
+                            ? isMobile
+                                ? '120px'
+                                : '200px'
+                            : isMobile
+                              ? '160px'
+                              : '200px',
                     bgcolor: 'black',
                     flexShrink: 0,
                 }}
@@ -77,6 +95,13 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                            '& img': {
+                                transform: 'scale(1.05)',
+                                filter: 'brightness(1.1)',
+                            },
+                        },
                     }}
                 >
                     {item.image_url ? (
@@ -92,12 +117,14 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                                     theme.palette.mode === 'dark'
                                         ? theme.palette.background.paper
                                         : theme.palette.background.default,
+                                transition:
+                                    'transform 0.3s ease, filter 0.3s ease',
                             }}
                         />
                     ) : (
                         <ImageNotSupported
                             sx={{
-                                fontSize: 60,
+                                fontSize: isMobile ? 40 : 60,
                                 color: 'text.secondary',
                                 opacity: 0.5,
                             }}
@@ -109,8 +136,8 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                 <Box
                     sx={{
                         position: 'absolute',
-                        top: 12,
-                        left: 12,
+                        top: 8,
+                        left: 8,
                         bgcolor:
                             theme.palette.mode === 'dark'
                                 ? 'rgba(255,255,255,0.1)'
@@ -123,10 +150,19 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                         gap: 0.5,
                     }}
                 >
-                    <FaceIcon sx={{ color: 'white', fontSize: '1rem' }} />
+                    <FaceIcon
+                        sx={{
+                            color: 'white',
+                            fontSize: isMobile ? '0.8rem' : '1rem',
+                        }}
+                    />
                     <Typography
                         variant="caption"
-                        sx={{ color: 'white', fontWeight: 'medium' }}
+                        sx={{
+                            color: 'white',
+                            fontWeight: 'medium',
+                            fontSize: isMobile ? '0.7rem' : '0.8rem',
+                        }}
                     >
                         {faceCount}
                     </Typography>
@@ -135,16 +171,16 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                 {/* Action buttons */}
                 <Stack
                     direction="row"
-                    spacing={1}
+                    spacing={0.5}
                     sx={{
                         position: 'absolute',
-                        top: 12,
-                        right: 12,
+                        top: 8,
+                        right: 8,
                     }}
                 >
                     <Tooltip title="View Details">
                         <IconButton
-                            size="small"
+                            size={isMobile ? 'small' : 'medium'}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onView(item);
@@ -157,17 +193,29 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                                 '&:hover': {
                                     bgcolor:
                                         theme.palette.mode === 'dark'
-                                            ? theme.palette.background.paper
-                                            : theme.palette.background.default,
+                                            ? alpha(
+                                                  theme.palette.primary.main,
+                                                  0.2
+                                              )
+                                            : alpha(
+                                                  theme.palette.primary.main,
+                                                  0.1
+                                              ),
+                                    transform: 'scale(1.1)',
                                 },
+                                padding: isMobile ? '4px' : '8px',
+                                transition: 'all 0.2s ease',
                             }}
                         >
-                            <VisibilityIcon fontSize="small" />
+                            <VisibilityIcon
+                                fontSize={isMobile ? 'small' : 'small'}
+                                sx={{ color: theme.palette.primary.main }}
+                            />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete">
                         <IconButton
-                            size="small"
+                            size={isMobile ? 'small' : 'medium'}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onDelete(item.detection_id);
@@ -180,12 +228,24 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                                 '&:hover': {
                                     bgcolor:
                                         theme.palette.mode === 'dark'
-                                            ? theme.palette.background.paper
-                                            : theme.palette.background.default,
+                                            ? alpha(
+                                                  theme.palette.error.main,
+                                                  0.2
+                                              )
+                                            : alpha(
+                                                  theme.palette.error.main,
+                                                  0.1
+                                              ),
+                                    transform: 'scale(1.1)',
                                 },
+                                padding: isMobile ? '4px' : '8px',
+                                transition: 'all 0.2s ease',
                             }}
                         >
-                            <DeleteIcon fontSize="small" />
+                            <DeleteIcon
+                                fontSize={isMobile ? 'small' : 'small'}
+                                sx={{ color: theme.palette.error.main }}
+                            />
                         </IconButton>
                     </Tooltip>
                 </Stack>
@@ -194,8 +254,8 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
             <CardContent
                 sx={{
                     flexGrow: 1,
-                    p: 2,
-                    '&:last-child': { pb: 2 },
+                    p: isMobile ? 1.5 : 2,
+                    '&:last-child': { pb: isMobile ? 1.5 : 2 },
                 }}
             >
                 <Stack spacing={1.5}>
@@ -203,7 +263,10 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <AccessTimeIcon
                             fontSize="small"
-                            sx={{ color: theme.palette.primary.main }}
+                            sx={{
+                                color: theme.palette.primary.main,
+                                fontSize: isMobile ? '0.9rem' : '1.25rem',
+                            }}
                         />
                         <Typography
                             variant="caption"
@@ -211,6 +274,7 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                             sx={{
                                 display: 'block',
                                 fontWeight: 'medium',
+                                fontSize: isMobile ? '0.7rem' : '0.8rem',
                             }}
                         >
                             {format(
@@ -226,7 +290,10 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                             variant="subtitle2"
                             color="text.secondary"
                             gutterBottom
-                            sx={{ mb: 0.5 }}
+                            sx={{
+                                mb: 0.5,
+                                fontSize: isMobile ? '0.75rem' : '0.8rem',
+                            }}
                         >
                             Main Emotion
                         </Typography>
@@ -241,6 +308,11 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                                 color: emotionColor,
                                 fontWeight: 'medium',
                                 borderRadius: 1.5,
+                                height: isMobile ? '22px' : '28px',
+                                '& .MuiChip-label': {
+                                    px: 1,
+                                    fontSize: isMobile ? '0.65rem' : '0.75rem',
+                                },
                             }}
                         />
                     </Box>

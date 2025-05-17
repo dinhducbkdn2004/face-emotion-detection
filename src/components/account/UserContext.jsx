@@ -40,14 +40,7 @@ export const UserProvider = ({ children }) => {
         const verifyWithBackend = async () => {
             if (isAuthenticated && user) {
                 try {
-                    console.log(
-                        'Đang xác thực với backend cho user Firebase',
-                        user.uid
-                    );
                     const response = await verifyTokenWithBackend();
-
-                    // Thêm log để theo dõi phản hồi
-                    console.log('Phản hồi từ backend:', response);
 
                     // Kiểm tra nếu có phản hồi từ server
                     if (response) {
@@ -63,7 +56,6 @@ export const UserProvider = ({ children }) => {
                     setBackendVerified(false);
                 }
             } else {
-                console.log('Không có user Firebase');
                 setBackendVerified(false);
                 setBackendProfile(null);
             }

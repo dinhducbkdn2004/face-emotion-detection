@@ -74,6 +74,8 @@ const History = () => {
         totalPages,
         page,
         limit,
+        fromDate,
+        toDate,
         refresh,
         handlePageChange,
         handleLimitChange,
@@ -82,16 +84,15 @@ const History = () => {
         initialLimit: 12,
     });
 
+    // Đồng bộ giá trị filter từ hook khi component mount
+    useEffect(() => {
+        setFromDateInput(fromDate);
+        setToDateInput(toDate);
+    }, [fromDate, toDate]);
+
     // Handle date filter changes
     const applyDateFilter = () => {
         handleDateFilterChange(fromDateInput, toDateInput);
-    };
-
-    // Clear all filters
-    const clearAllFilters = () => {
-        setFromDateInput(null);
-        setToDateInput(null);
-        handleDateFilterChange(null, null);
     };
 
     const handleDeleteConfirmation = (detectionId) => {
@@ -141,372 +142,301 @@ const History = () => {
         setModalOpen(false);
     };
 
-    // Render loading skeletons
-    const renderSkeletons = () => {
-        return (
-            <Grid container spacing={2}>
-                {[...Array(limit)].map((_, index) => (
-                    <Grid
-                        item
-                        xs={12}
-                        sm={viewMode === 'grid' ? 6 : 12}
-                        md={viewMode === 'grid' ? 4 : 12}
-                        lg={viewMode === 'grid' ? 3 : 12}
-                        key={index}
-                    >
-                        <HistoryItemSkeleton />
-                    </Grid>
-                ))}
-            </Grid>
-        );
-    };
-
-    // Render items list
-    const renderItems = () => {
-        if (data?.length === 0) {
-            return (
-                <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
-                    No results match your filters. Please change filters and try
-                    again.
-                </Alert>
-            );
-        }
-
-        return (
-            <Grid container spacing={2}>
-                {data?.map((item) => (
-                    <Grid
-                        item
-                        xs={12}
-                        sm={viewMode === 'grid' ? 6 : 12}
-                        md={viewMode === 'grid' ? 4 : 12}
-                        lg={viewMode === 'grid' ? 3 : 12}
-                        key={item.detection_id}
-                    >
-                        <HistoryItem
-                            item={item}
-                            onDelete={handleDeleteConfirmation}
-                            onView={handleViewDetail}
-                            viewMode={viewMode}
-                        />
-                    </Grid>
-                ))}
-            </Grid>
-        );
-    };
-
     // Xử lý thay đổi trang cho TablePagination
     const handleChangePage = (event, newPage) => {
-        console.log('Chuyển trang:', newPage + 1);
+        // Chỉ thay đổi trang mà không reset các bộ lọc
         handlePageChange(newPage + 1); // TablePagination sử dụng index bắt đầu từ 0
     };
 
     // Xử lý thay đổi số dòng mỗi trang
     const handleChangeRowsPerPage = (event) => {
-        console.log('Thay đổi số dòng:', event.target.value);
         handleLimitChange(parseInt(event.target.value, 10));
     };
 
     return (
-        <Fade in={true}>
-            <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
-                <Paper
-                    elevation={0}
+        <Container
+            maxWidth="lg"
+            sx={{
+                py: { xs: 1.5, md: 4 },
+                width: { xs: '90%', sm: '95%', md: '100%', lg: '100%' },
+                mx: 'auto',
+            }}
+        >
+            <Paper
+                elevation={0}
+                sx={{
+                    p: { xs: 1.5, sm: 2, md: 3 },
+                    borderRadius: 3,
+                    bgcolor: 'background.paper',
+                    boxShadow: theme.shadows[1],
+                    mb: 3,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                        boxShadow: theme.shadows[3],
+                    },
+                }}
+            >
+                {/* Header with title */}
+                <Typography
+                    variant={isMobile ? 'h6' : isTablet ? 'h5' : 'h4'}
+                    fontWeight="bold"
                     sx={{
-                        p: { xs: 2, sm: 3, md: 4 },
-                        borderRadius: 4,
-                        bgcolor: 'background.paper',
-                        boxShadow: theme.shadows[2],
-                        mb: 4,
-                        position: 'relative',
-                        overflow: 'hidden',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            boxShadow: theme.shadows[4],
+                        mb: { xs: 1.5, md: 2 },
+                        textAlign: 'center',
+                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        letterSpacing: '0.5px',
+                        fontSize: {
+                            xs: '1.25rem',
+                            sm: '1.5rem',
+                            md: '2rem',
                         },
                     }}
                 >
-                    {/* Header with title */}
-                    <Typography
-                        variant={isMobile ? 'h5' : 'h4'}
-                        fontWeight="bold"
-                        sx={{
-                            mb: 3,
-                            textAlign: 'center',
-                            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent',
-                            letterSpacing: '0.5px',
-                        }}
+                    Emotion Detection History
+                </Typography>
+
+                <Divider sx={{ mb: { xs: 2, md: 3 } }} />
+
+                {/* Filter section */}
+                <Box
+                    sx={{
+                        mb: { xs: 2, md: 3 },
+                        display: 'flex',
+                        flexDirection: { xs: 'column', md: 'row' },
+                        flexWrap: 'wrap',
+                        gap: { xs: 1, md: 2 },
+                        alignItems: { xs: 'stretch', md: 'center' },
+                    }}
+                >
+                    <LocalizationProvider
+                        dateAdapter={AdapterDateFns}
+                        adapterLocale={enUS}
                     >
-                        Emotion Detection History
-                    </Typography>
-
-                    <Divider sx={{ mb: 4 }} />
-
-                    {/* Filter section */}
-                    <Box
-                        sx={{
-                            mb: 4,
-                            p: 2,
-                            bgcolor:
-                                theme.palette.mode === 'dark'
-                                    ? 'rgba(255,255,255,0.05)'
-                                    : 'rgba(0,0,0,0.02)',
-                            borderRadius: 3,
-                        }}
-                    >
-                        <LocalizationProvider
-                            dateAdapter={AdapterDateFns}
-                            adapterLocale={enUS}
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={{ xs: 1, sm: 2 }}
+                            sx={{ flexGrow: 1 }}
                         >
-                            <Grid container spacing={2} alignItems="center">
-                                {/* Date filters */}
-                                <Grid item xs={12} sm={6} md={4}>
-                                    <DatePicker
-                                        label="From Date"
-                                        value={fromDateInput}
-                                        onChange={(newValue) =>
-                                            setFromDateInput(newValue)
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                fullWidth
-                                                size="small"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root':
-                                                        {
-                                                            borderRadius: 2,
-                                                        },
-                                                }}
-                                            />
-                                        )}
-                                        maxDate={toDateInput || undefined}
-                                    />
-                                </Grid>
-
-                                <Grid item xs={12} sm={6} md={4}>
-                                    <DatePicker
-                                        label="To Date"
-                                        value={toDateInput}
-                                        onChange={(newValue) =>
-                                            setToDateInput(newValue)
-                                        }
-                                        renderInput={(params) => (
-                                            <TextField
-                                                {...params}
-                                                fullWidth
-                                                size="small"
-                                                sx={{
-                                                    '& .MuiOutlinedInput-root':
-                                                        {
-                                                            borderRadius: 2,
-                                                        },
-                                                }}
-                                            />
-                                        )}
-                                        minDate={fromDateInput || undefined}
-                                    />
-                                </Grid>
-
-                                {/* Filter and refresh buttons */}
-                                <Grid item xs={12} md={4}>
-                                    <Stack direction="row" spacing={1}>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={applyDateFilter}
-                                            startIcon={<FilterIcon />}
-                                            fullWidth
-                                            sx={{
-                                                borderRadius: 2,
-                                                textTransform: 'none',
-                                                boxShadow: 'none',
-                                                '&:hover': {
-                                                    boxShadow: theme.shadows[2],
-                                                },
-                                            }}
-                                        >
-                                            {isMobile ? '' : 'Filter'}
-                                        </Button>
-
-                                        <Button
-                                            variant="outlined"
-                                            onClick={clearAllFilters}
-                                            startIcon={<RefreshIcon />}
-                                            fullWidth
-                                            sx={{
-                                                borderRadius: 2,
-                                                textTransform: 'none',
-                                            }}
-                                        >
-                                            {isMobile ? '' : 'Reset'}
-                                        </Button>
-                                    </Stack>
-                                </Grid>
-                            </Grid>
-                        </LocalizationProvider>
-                    </Box>
-
-                    {/* Toolbar with result count and view mode toggle */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            flexWrap: 'wrap',
-                            mb: 3,
-                            p: 2,
-                            borderRadius: 3,
-                            bgcolor:
-                                theme.palette.mode === 'dark'
-                                    ? 'rgba(255,255,255,0.05)'
-                                    : 'rgba(0,0,0,0.02)',
-                        }}
-                    >
-                        {/* Statistics */}
-                        <Box sx={{ mb: { xs: 2, sm: 0 } }}>
-                            <Stack
-                                direction="row"
-                                spacing={2}
-                                alignItems="center"
-                            >
-                                <Chip
-                                    label={`Total: ${totalCount || 0} results`}
-                                    variant="outlined"
-                                    size="small"
-                                    sx={{
-                                        borderRadius: 2,
-                                        bgcolor:
-                                            theme.palette.primary.main + '10',
-                                        borderColor:
-                                            theme.palette.primary.main + '50',
-                                        color: theme.palette.primary.main,
-                                        fontWeight: 500,
-                                    }}
-                                />
-                            </Stack>
-                        </Box>
-
-                        {/* View mode */}
-                        <Stack direction="row" spacing={2} alignItems="center">
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    bgcolor: theme.palette.background.paper,
-                                    borderRadius: 2,
-                                    p: 0.5,
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                }}
-                            >
-                                <Tooltip title="List View">
-                                    <IconButton
-                                        size="small"
-                                        color={
-                                            viewMode === 'list'
-                                                ? 'primary'
-                                                : 'default'
-                                        }
-                                        onClick={() => setViewMode('list')}
-                                    >
-                                        <ViewListIcon />
-                                    </IconButton>
-                                </Tooltip>
-
-                                <Tooltip title="Grid View">
-                                    <IconButton
-                                        size="small"
-                                        color={
-                                            viewMode === 'grid'
-                                                ? 'primary'
-                                                : 'default'
-                                        }
-                                        onClick={() => setViewMode('grid')}
-                                    >
-                                        <ViewModuleIcon />
-                                    </IconButton>
-                                </Tooltip>
-                            </Box>
-                        </Stack>
-                    </Box>
-
-                    {/* Error message */}
-                    {error && (
-                        <Alert
-                            severity="error"
-                            sx={{
-                                mb: 3,
-                                borderRadius: 2,
-                                '& .MuiAlert-icon': {
-                                    fontSize: '1.5rem',
-                                },
-                            }}
-                        >
-                            Could not load detection history. Please try again
-                            later.
-                        </Alert>
-                    )}
-
-                    {/* Content - List or skeleton */}
-                    <Box sx={{ mb: 3, minHeight: '50vh' }}>
-                        <div>{loading ? renderSkeletons() : renderItems()}</div>
-                    </Box>
-
-                    {/* Pagination */}
-                    {!loading && (
-                        <Box
-                            sx={{
-                                mt: 4,
-                                display: 'flex',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <TablePagination
-                                component="div"
-                                count={totalCount || 0}
-                                page={(page || 1) - 1} // TablePagination sử dụng index bắt đầu từ 0
-                                onPageChange={handleChangePage}
-                                rowsPerPage={limit}
-                                onRowsPerPageChange={handleChangeRowsPerPage}
-                                rowsPerPageOptions={[12, 24, 36, 48]}
-                                labelRowsPerPage="Số dòng:"
-                                labelDisplayedRows={({ from, to, count }) =>
-                                    `${from}-${to} của ${
-                                        count !== -1 ? count : `hơn ${to}`
-                                    }`
+                            <DatePicker
+                                label="From Date"
+                                value={fromDateInput}
+                                onChange={(newValue) =>
+                                    setFromDateInput(newValue)
                                 }
-                                // Luôn hiển thị nút next/previous
-                                nextIconButtonProps={{
-                                    disabled: loading || data.length < limit,
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        size: 'small',
+                                        variant: 'outlined',
+                                        sx: {
+                                            bgcolor:
+                                                theme.palette.mode === 'dark'
+                                                    ? 'rgba(255,255,255,0.03)'
+                                                    : 'rgba(0,0,0,0.02)',
+                                        },
+                                    },
                                 }}
-                                showFirstButton
-                                showLastButton
                             />
-                        </Box>
-                    )}
-                </Paper>
+                            <DatePicker
+                                label="To Date"
+                                value={toDateInput}
+                                onChange={(newValue) =>
+                                    setToDateInput(newValue)
+                                }
+                                slotProps={{
+                                    textField: {
+                                        fullWidth: true,
+                                        size: 'small',
+                                        variant: 'outlined',
+                                        sx: {
+                                            bgcolor:
+                                                theme.palette.mode === 'dark'
+                                                    ? 'rgba(255,255,255,0.03)'
+                                                    : 'rgba(0,0,0,0.02)',
+                                        },
+                                    },
+                                }}
+                            />
+                        </Stack>
+                    </LocalizationProvider>
 
-                {/* Detail Modal */}
-                {selectedItem && (
-                    <HistoryDetailModal
-                        open={modalOpen}
-                        onClose={handleCloseModal}
-                        item={selectedItem}
-                        onDelete={handleDeleteConfirmation}
+                    <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                            justifyContent: {
+                                xs: 'space-between',
+                                md: 'center',
+                            },
+                            mt: { xs: 1, md: 0 },
+                            width: { xs: '100%', md: 'auto' },
+                        }}
+                    >
+                        <Button
+                            variant="outlined"
+                            startIcon={<FilterIcon />}
+                            onClick={applyDateFilter}
+                            size="small"
+                            sx={{ flex: { xs: 1, md: 'none' } }}
+                        >
+                            Filter
+                        </Button>
+                        <Stack
+                            direction="row"
+                            spacing={1}
+                            sx={{
+                                justifyContent: 'flex-end',
+                            }}
+                        >
+                            <Tooltip title="List view">
+                                <IconButton
+                                    color={
+                                        viewMode === 'list'
+                                            ? 'primary'
+                                            : 'default'
+                                    }
+                                    onClick={() => setViewMode('list')}
+                                    size="small"
+                                >
+                                    <ViewListIcon />
+                                </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Grid view">
+                                <IconButton
+                                    color={
+                                        viewMode === 'grid'
+                                            ? 'primary'
+                                            : 'default'
+                                    }
+                                    onClick={() => setViewMode('grid')}
+                                    size="small"
+                                >
+                                    <ViewModuleIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
+                    </Stack>
+                </Box>
+
+                {/* Loading progress */}
+                {loading && (
+                    <LinearProgress
+                        sx={{
+                            mb: 2,
+                            borderRadius: 1,
+                            height: 6,
+                            '& .MuiLinearProgress-bar': {
+                                borderRadius: 1,
+                                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                            },
+                        }}
                     />
                 )}
 
-                {/* Confirm Delete Modal */}
-                <ConfirmDeleteModal
-                    open={deleteConfirmOpen}
-                    onClose={handleDeleteCancel}
-                    onConfirm={() => itemToDelete && handleDelete(itemToDelete)}
-                />
-            </Container>
-        </Fade>
+                {/* Items list */}
+                <Box
+                    sx={{
+                        minHeight: { xs: '300px', md: '400px' },
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'flex-start',
+                        width: '100%',
+                        mx: 'auto',
+                    }}
+                >
+                    {data?.length === 0 ? (
+                        <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
+                            No results match your filters. Please change filters
+                            and try again.
+                        </Alert>
+                    ) : (
+                        <Fade in={!loading} timeout={800}>
+                            <Grid
+                                container
+                                spacing={isMobile ? 1 : 2}
+                                justifyContent="center"
+                            >
+                                {data?.map((item) => (
+                                    <Grid item key={item.detection_id}>
+                                        <HistoryItem
+                                            item={item}
+                                            onDelete={handleDeleteConfirmation}
+                                            onView={handleViewDetail}
+                                            viewMode={viewMode}
+                                        />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Fade>
+                    )}
+                </Box>
+
+                {/* Pagination */}
+                {!loading && data?.length > 0 && (
+                    <TablePagination
+                        component="div"
+                        count={totalCount}
+                        page={page - 1} // TablePagination sử dụng index bắt đầu từ 0
+                        onPageChange={handleChangePage}
+                        rowsPerPage={limit}
+                        onRowsPerPageChange={handleChangeRowsPerPage}
+                        rowsPerPageOptions={
+                            isMobile ? [6, 12, 24] : [6, 12, 24, 48]
+                        }
+                        labelRowsPerPage={isTablet ? 'Rows:' : 'Rows per page:'}
+                        sx={{
+                            mt: 2,
+                            '.MuiTablePagination-toolbar': {
+                                fontSize: '0.85rem',
+                                flexWrap: 'wrap',
+                                gap: 0.5,
+                                justifyContent: isMobile
+                                    ? 'center'
+                                    : 'flex-end',
+                            },
+                            '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
+                                {
+                                    fontSize: '0.85rem',
+                                    margin: isMobile ? 0 : undefined,
+                                },
+                            '.MuiTablePagination-select': {
+                                paddingLeft: isMobile ? '0.25rem' : undefined,
+                                paddingRight: isMobile ? '1.5rem' : undefined,
+                            },
+                            '.MuiSelect-select': {
+                                minWidth: isMobile ? '1.5rem' : undefined,
+                            },
+                            '.MuiTablePagination-actions': {
+                                marginLeft: isMobile ? 0 : undefined,
+                            },
+                        }}
+                    />
+                )}
+            </Paper>
+
+            {/* Detail modal */}
+            <HistoryDetailModal
+                open={modalOpen}
+                onClose={handleCloseModal}
+                item={selectedItem}
+                onDelete={handleDelete}
+            />
+
+            {/* Confirm Delete */}
+            <ConfirmDeleteModal
+                open={deleteConfirmOpen}
+                onClose={handleDeleteCancel}
+                onConfirm={() => handleDelete(itemToDelete)}
+                item={
+                    data?.find((item) => item.detection_id === itemToDelete) ||
+                    null
+                }
+            />
+        </Container>
     );
 };
 

@@ -1,84 +1,68 @@
 import React from 'react';
-import { Card, CardContent, Skeleton, Box, useTheme } from '@mui/material';
+import { Box, Skeleton, Card, useTheme, useMediaQuery } from '@mui/material';
 
-const HistoryItemSkeleton = () => {
+const HistoryItemSkeleton = ({ viewMode = 'grid' }) => {
     const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     return (
         <Card
-            elevation={0}
+            variant="outlined"
             sx={{
-                borderRadius: 2,
-                overflow: 'hidden',
-                border: '1px solid',
-                borderColor:
-                    theme.palette.mode === 'dark'
-                        ? 'rgba(255,255,255,0.1)'
-                        : 'rgba(0,0,0,0.1)',
                 height: '100%',
+                width: '100%',
                 display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center',
+                flexDirection: 'column',
+                borderRadius: 3,
+                overflow: 'hidden',
+                borderColor: theme.palette.divider,
+                maxWidth: isMobile ? '100%' : 'auto',
             }}
         >
+            {/* Image area - luôn nằm trên cùng */}
             <Skeleton
                 variant="rectangular"
-                width={80}
-                height={80}
-                animation="wave"
-                sx={{
-                    bgcolor:
-                        theme.palette.mode === 'dark'
-                            ? 'rgba(255,255,255,0.05)'
-                            : 'rgba(0,0,0,0.05)',
-                    flexShrink: 0,
-                }}
+                width="100%"
+                height={isMobile ? 160 : 200}
             />
 
-            <CardContent sx={{ p: 1.5, flex: 1 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        mb: 0.5,
-                    }}
-                >
-                    <Skeleton
-                        variant="circular"
-                        width={16}
-                        height={16}
-                        animation="wave"
-                    />
-                    <Skeleton
-                        variant="text"
-                        width={60}
-                        height={20}
-                        animation="wave"
-                    />
-                </Box>
-                <Skeleton
-                    variant="text"
-                    width={40}
-                    height={16}
-                    animation="wave"
-                    sx={{ opacity: 0.5 }}
-                />
-            </CardContent>
-
-            <Box sx={{ display: 'flex', gap: 0.5, pr: 1, pl: 0.5 }}>
-                <Skeleton
-                    variant="circular"
-                    width={24}
-                    height={24}
-                    animation="wave"
-                />
-                <Skeleton
-                    variant="circular"
-                    width={24}
-                    height={24}
-                    animation="wave"
-                />
+            {/* Content area - luôn nằm dưới */}
+            <Box
+                sx={{
+                    p: isMobile ? 1.5 : 2,
+                    flexGrow: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                }}
+            >
+                {/* Nếu ở chế độ list, hiển thị theo kiểu list */}
+                {viewMode === 'list' && !isMobile ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ flex: 1 }}>
+                            <Skeleton width="80%" />
+                            <Skeleton width="50%" />
+                        </Box>
+                        <Box sx={{ ml: 2, display: 'flex', gap: 1 }}>
+                            <Skeleton
+                                variant="circular"
+                                width={30}
+                                height={30}
+                            />
+                            <Skeleton
+                                variant="circular"
+                                width={30}
+                                height={30}
+                            />
+                        </Box>
+                    </Box>
+                ) : (
+                    // Hiển thị theo kiểu grid hoặc mobile list
+                    <Box sx={{ pt: 0.5 }}>
+                        <Skeleton width="100%" />
+                        <Skeleton width="60%" />
+                    </Box>
+                )}
             </Box>
         </Card>
     );

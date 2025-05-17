@@ -71,7 +71,7 @@ const teamMembers = [
         role: 'Backend Developer',
         avatar: '/avatar_ldb.webp',
         description:
-            'AI expert with over 10 years of experience in machine learning.',
+            'Using Node.js, Express, and MongoDB to create a backend server.',
         socialLinks: [
             { icon: 'GitHub', url: 'https://github.com/' },
             { icon: 'LinkedIn', url: 'https://linkedin.com/' },
@@ -88,15 +88,26 @@ const milestones = [
     },
     {
         year: '02/2025',
-        title: 'First Model',
+        title: 'Train Model',
         description:
             'Trained and deployed the first version of our emotion detection model with 70% accuracy.',
+    },
+    {
+        year: '03-04/2025',
+        title: 'Build a Website',
+        description: 'Build a website to display the emotion detection model.',
+    },
+    {
+        year: '05/2025',
+        title: 'Deploy Model & Website',
+        description:
+            'Deploy the emotion detection model and website to the cloud.',
     },
     {
         year: '06/2025',
         title: 'Platform Launch',
         description:
-            'Officially launched our emotion detection platform with an improved model offering 95% accuracy.',
+            'First version of the platform was launched with a simple interface and limited features.',
     },
 ];
 
@@ -146,12 +157,12 @@ export default function About() {
                     theme.palette.mode === 'dark'
                         ? 'linear-gradient(to bottom, #121212, #1e1e1e)'
                         : 'linear-gradient(to bottom, #f9fafb, #f5f5f5)',
-                minHeight: 'calc(100vh - 80px)',
-                py: { xs: 4, md: 6 },
+                minHeight: 'calc(100vh - 70px)',
+                py: { xs: 3, md: 4 },
             }}
         >
             <style>{shimmerKeyframes}</style>
-            <Container maxWidth="lg">
+            <Container maxWidth="lg" sx={{ width: '85%', mx: 'auto' }}>
                 {/* Hero Section */}
                 <MotionBox
                     initial={{ opacity: 0, y: 50 }}
@@ -159,17 +170,17 @@ export default function About() {
                     transition={{ duration: 0.8 }}
                     sx={{
                         textAlign: 'center',
-                        mb: { xs: 6, md: 8 },
+                        mb: { xs: 4, md: 6 },
                         px: { xs: 2, sm: 0 },
                     }}
                 >
                     <Typography
-                        variant={isMobile ? 'h3' : 'h2'}
+                        variant={isMobile ? 'h4' : 'h3'}
                         component="h1"
                         gutterBottom
                         fontWeight="bold"
                         sx={{
-                            mb: { xs: 2, md: 3 },
+                            mb: { xs: 1.5, md: 2 },
                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -178,25 +189,26 @@ export default function About() {
                         About Us
                     </Typography>
                     <Typography
-                        variant={isMobile ? 'body1' : 'h6'}
+                        variant={isMobile ? 'body2' : 'body1'}
                         color="text.secondary"
                         sx={{
-                            maxWidth: 800,
+                            maxWidth: 700,
                             mx: 'auto',
-                            mb: { xs: 4, md: 5 },
-                            lineHeight: 1.8,
+                            mb: { xs: 3, md: 4 },
+                            lineHeight: 1.6,
                         }}
                     >
-                        We are a team of experts in AI and emotion analysis,
-                        with a mission to help you better understand human
-                        emotions through advanced technology.
+                        We are a team of students from Da Nang University of
+                        Technology, with a passion for creating innovative
+                        solutions. We are currently working on a project to
+                        detect emotions from images.
                     </Typography>
 
-                    <Divider sx={{ width: '60%', mx: 'auto', mb: 6 }} />
+                    <Divider sx={{ width: '50%', mx: 'auto', mb: 4 }} />
                 </MotionBox>
 
                 {/* Company Timeline */}
-                <Box sx={{ mb: { xs: 6, md: 8 } }}>
+                <Box sx={{ mb: { xs: 4, md: 6 } }}>
                     <MotionPaper
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -204,14 +216,14 @@ export default function About() {
                         viewport={{ once: true }}
                         elevation={0}
                         sx={{
-                            p: { xs: 2, md: 4 },
+                            p: { xs: 2, md: 3 },
                             borderRadius: 3,
                             bgcolor:
                                 theme.palette.mode === 'dark'
                                     ? 'rgba(255,255,255,0.05)'
                                     : 'rgba(255,255,255,0.9)',
                             backdropFilter: 'blur(10px)',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                            boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
                         }}
                     >
                         <Timeline position={isMobile ? 'right' : 'alternate'}>
@@ -271,13 +283,37 @@ export default function About() {
 
                 <Box
                     sx={{
-                        maxWidth: 1200,
+                        maxWidth: 1000,
                         mx: 'auto',
+                        width: '100%',
                     }}
                 >
+                    <MotionBox
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.7 }}
+                        viewport={{ once: true, margin: '-100px' }}
+                        sx={{ mb: 4 }}
+                    >
+                        <Typography
+                            variant={isMobile ? 'h5' : 'h4'}
+                            component="h2"
+                            gutterBottom
+                            fontWeight="bold"
+                            textAlign="center"
+                            sx={{
+                                mb: { xs: 2, md: 3 },
+                                background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                            }}
+                        >
+                            Our Technologies
+                        </Typography>
+                    </MotionBox>
                     <Grid
                         container
-                        spacing={{ xs: 2, md: 3 }}
+                        spacing={{ xs: 2, md: 2 }}
                         component={motion.div}
                         initial="hidden"
                         animate="visible"
@@ -292,14 +328,14 @@ export default function About() {
                                 item
                                 xs={12}
                                 sm={6}
-                                md={3}
+                                md={4}
                                 key={index}
                                 sx={{
                                     display: 'flex',
                                     width: {
                                         xs: '100%',
                                         sm: '50%',
-                                        md: '25%',
+                                        md: 'calc(100% / 3)',
                                     },
                                 }}
                             >
@@ -307,13 +343,13 @@ export default function About() {
                                     variants={itemVariants}
                                     elevation={0}
                                     sx={{
-                                        p: { xs: 2, md: 3 },
+                                        p: { xs: 2, md: 2.5 },
                                         width: '100%',
                                         height: '100%',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         justifyContent: 'center',
-                                        borderRadius: 4,
+                                        borderRadius: 3,
                                         bgcolor: 'background.paper',
                                         border: 1,
                                         borderColor: 'divider',
@@ -322,8 +358,8 @@ export default function About() {
                                                 theme.palette.mode === 'dark'
                                                     ? 'rgba(255, 255, 255, 0.05)'
                                                     : 'rgba(0, 0, 0, 0.02)',
-                                            transform: 'translateY(-4px)',
-                                            boxShadow: theme.shadows[4],
+                                            transform: 'translateY(-3px)',
+                                            boxShadow: theme.shadows[3],
                                         },
                                         transition: 'all 0.3s ease-in-out',
                                     }}
@@ -337,26 +373,29 @@ export default function About() {
                                             textAlign: 'center',
                                             height: '100%',
                                             minHeight: {
-                                                xs: 150,
-                                                sm: 180,
-                                                md: 200,
+                                                xs: 120,
+                                                sm: 150,
+                                                md: 170,
                                             },
                                         }}
                                     >
                                         <Box
                                             sx={{
-                                                mb: 2,
+                                                mb: 1.5,
                                                 color: 'primary.main',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
+                                                '& svg': {
+                                                    fontSize: '30px',
+                                                },
                                             }}
                                         >
                                             {tech.icon}
                                         </Box>
                                         <Box>
                                             <Typography
-                                                variant="h6"
+                                                variant="subtitle1"
                                                 gutterBottom
                                                 fontWeight="bold"
                                             >
@@ -365,6 +404,7 @@ export default function About() {
                                             <Typography
                                                 variant="body2"
                                                 color="text.secondary"
+                                                sx={{ fontSize: '0.85rem' }}
                                             >
                                                 {tech.description}
                                             </Typography>
@@ -377,7 +417,7 @@ export default function About() {
                 </Box>
 
                 {/* Team Members Section */}
-                <Box sx={{ mb: { xs: 8, md: 12 }, mt: { xs: 6, md: 10 } }}>
+                <Box sx={{ mb: { xs: 5, md: 8 }, mt: { xs: 4, md: 5 } }}>
                     <MotionBox
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -385,13 +425,13 @@ export default function About() {
                         viewport={{ once: true, margin: '-100px' }}
                     >
                         <Typography
-                            variant={isMobile ? 'h4' : 'h3'}
+                            variant={isMobile ? 'h5' : 'h4'}
                             component="h2"
                             gutterBottom
                             fontWeight="bold"
                             textAlign="center"
                             sx={{
-                                mb: { xs: 4, md: 6 },
+                                mb: { xs: 2, md: 3 },
                                 background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
@@ -400,13 +440,13 @@ export default function About() {
                             Our Team
                         </Typography>
                         <Typography
-                            variant="body1"
+                            variant="body2"
                             color="text.secondary"
                             textAlign="center"
                             sx={{
-                                maxWidth: 700,
+                                maxWidth: 600,
                                 mx: 'auto',
-                                mb: 6,
+                                mb: 4,
                             }}
                         >
                             Our talented team brings together expertise in AI,
@@ -415,10 +455,18 @@ export default function About() {
                         </Typography>
                     </MotionBox>
 
-                    <Grid
-                        container
-                        spacing={4}
-                        justifyContent="center"
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            gap: 3,
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                            width: '100%',
+                            maxWidth: '1000px',
+                            mx: 'auto',
+                            px: { xs: 2, sm: 3 },
+                        }}
                         component={motion.div}
                         variants={containerVariants}
                         initial="hidden"
@@ -426,212 +474,103 @@ export default function About() {
                         viewport={{ once: true, amount: 0.2 }}
                     >
                         {teamMembers.map((member, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={index}>
-                                <MotionPaper
-                                    variants={itemVariants}
-                                    elevation={0}
-                                    whileHover={{
-                                        scale: 1.03,
-                                        boxShadow: theme.shadows[10],
-                                    }}
-                                    transition={{
-                                        type: 'spring',
-                                        stiffness: 400,
-                                        damping: 15,
-                                    }}
+                            <MotionPaper
+                                key={index}
+                                variants={itemVariants}
+                                elevation={0}
+                                whileHover={{
+                                    scale: 1.02,
+                                    boxShadow: theme.shadows[5],
+                                }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 15,
+                                }}
+                                sx={{
+                                    p: 3,
+                                    borderRadius: 3,
+                                    bgcolor: 'background.paper',
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    textAlign: 'center',
+                                    flex: {
+                                        xs: '1 1 100%',
+                                        sm: '1 1 calc(50% - 1.5rem)',
+                                    },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                <Avatar
+                                    src={member.avatar}
                                     sx={{
-                                        p: 4,
-                                        borderRadius: 4,
-                                        bgcolor: 'background.paper',
-                                        border: 1,
-                                        borderColor: 'divider',
-                                        textAlign: 'center',
-                                        height: '100%',
+                                        width: 90,
+                                        height: 90,
+                                        mx: 'auto',
+                                        mb: 2,
+                                        border: 3,
+                                        borderColor: 'primary.main',
+                                        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                    }}
+                                />
+                                <Typography
+                                    variant="h6"
+                                    fontWeight="bold"
+                                    gutterBottom
+                                >
+                                    {member.name}
+                                </Typography>
+                                <Typography
+                                    variant="subtitle2"
+                                    color="primary"
+                                    gutterBottom
+                                >
+                                    {member.role}
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ mb: 2 }}
+                                >
+                                    {member.description}
+                                </Typography>
+                                <Box
+                                    sx={{
                                         display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        position: 'relative',
-                                        overflow: 'hidden',
-                                        '&:after': {
-                                            content: '""',
-                                            position: 'absolute',
-                                            top: 0,
-                                            left: 0,
-                                            width: '100%',
-                                            height: '100%',
-                                            background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}20)`,
-                                            opacity: 0,
-                                            transition: 'opacity 0.5s ease',
-                                            zIndex: 0,
-                                        },
-                                        '&:before': {
-                                            content: '""',
-                                            position: 'absolute',
-                                            width: '100%',
-                                            height: '4px',
-                                            bottom: 0,
-                                            left: 0,
-                                            background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                                            transform: 'scaleX(0)',
-                                            transformOrigin: 'left',
-                                            transition: 'transform 0.3s ease',
-                                            zIndex: 1,
-                                        },
-                                        '&:hover': {
-                                            transform: 'translateY(-8px)',
-                                            boxShadow: theme.shadows[10],
-                                            '& .member-social': {
-                                                opacity: 1,
-                                                transform: 'translateY(0)',
-                                            },
-                                            '&:before': {
-                                                transform: 'scaleX(1)',
-                                            },
-                                            '&:after': {
-                                                opacity: 1,
-                                            },
-                                            '& .member-avatar': {
-                                                borderColor:
-                                                    theme.palette.secondary
-                                                        .main,
-                                                transform: 'scale(1.05)',
-                                            },
-                                            '& .member-badge': {
-                                                transform:
-                                                    'translateY(0) rotate(0)',
-                                                opacity: 1,
-                                            },
-                                        },
+                                        gap: 1,
+                                        justifyContent: 'center',
+                                        mt: 'auto',
                                     }}
                                 >
-                                    <Box
-                                        className="member-badge"
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 20,
-                                            right: 0,
-                                            bgcolor: 'primary.main',
-                                            color: 'white',
-                                            py: 0.5,
-                                            px: 2,
-                                            borderTopLeftRadius: 12,
-                                            borderBottomLeftRadius: 12,
-                                            fontWeight: 'bold',
-                                            fontSize: '0.75rem',
-                                            zIndex: 2,
-                                            transform:
-                                                'translateY(-50px) rotate(-90deg)',
-                                            opacity: 0,
-                                            transition: 'all 0.4s ease',
-                                            boxShadow:
-                                                '0 2px 8px rgba(0,0,0,0.2)',
-                                        }}
-                                    >
-                                        {index === 0 ? 'Frontend' : 'Backend'}
-                                    </Box>
-
-                                    <Box
-                                        sx={{ position: 'relative', zIndex: 1 }}
-                                    >
-                                        <Avatar
-                                            className="member-avatar"
-                                            src={member.avatar}
+                                    {member.socialLinks.map((link, i) => (
+                                        <IconButton
+                                            key={i}
+                                            href={link.url}
+                                            target="_blank"
+                                            size="small"
                                             sx={{
-                                                width: 120,
-                                                height: 120,
-                                                mb: 2,
-                                                border: 3,
-                                                borderColor: 'primary.main',
-                                                boxShadow:
-                                                    '0 8px 20px rgba(0,0,0,0.1)',
-                                                transition: 'all 0.3s ease',
-                                            }}
-                                        />
-
-                                        <Typography
-                                            variant="h5"
-                                            gutterBottom
-                                            fontWeight="bold"
-                                            sx={{ mb: 0.5 }}
-                                        >
-                                            {member.name}
-                                        </Typography>
-
-                                        <Typography
-                                            variant="subtitle1"
-                                            color="primary"
-                                            sx={{
-                                                mb: 2,
-                                                fontWeight: 'medium',
-                                                pb: 1,
-                                                borderBottom: '2px solid',
-                                                borderColor: 'divider',
-                                                width: '60%',
+                                                color: 'primary.main',
+                                                '&:hover': {
+                                                    color: 'primary.dark',
+                                                    transform: 'scale(1.1)',
+                                                },
+                                                transition: 'all 0.2s',
                                             }}
                                         >
-                                            {member.role}
-                                        </Typography>
-
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                            sx={{ mb: 3 }}
-                                        >
-                                            {member.description}
-                                        </Typography>
-                                    </Box>
-
-                                    <Box
-                                        className="member-social"
-                                        sx={{
-                                            mt: 'auto',
-                                            display: 'flex',
-                                            gap: 2,
-                                            opacity: 0.9,
-                                            transform: 'translateY(10px)',
-                                            transition: 'all 0.3s ease',
-                                        }}
-                                    >
-                                        {member.socialLinks.map(
-                                            (social, idx) => (
-                                                <IconButton
-                                                    key={idx}
-                                                    color="primary"
-                                                    aria-label={social.icon}
-                                                    component={motion.button}
-                                                    whileHover={{
-                                                        scale: 1.2,
-                                                        color: theme.palette
-                                                            .secondary.main,
-                                                    }}
-                                                    sx={{
-                                                        bgcolor:
-                                                            'background.paper',
-                                                        boxShadow:
-                                                            '0 4px 10px rgba(0,0,0,0.05)',
-                                                        '&:hover': {
-                                                            bgcolor:
-                                                                'background.paper',
-                                                        },
-                                                    }}
-                                                    href={social.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                >
-                                                    {social.icon ===
-                                                    'GitHub' ? (
-                                                        <GitHub />
-                                                    ) : (
-                                                        <LinkedIn />
-                                                    )}
-                                                </IconButton>
-                                            )
-                                        )}
-                                    </Box>
-                                </MotionPaper>
-                            </Grid>
+                                            {link.icon === 'GitHub' ? (
+                                                <GitHub />
+                                            ) : (
+                                                <LinkedIn />
+                                            )}
+                                        </IconButton>
+                                    ))}
+                                </Box>
+                            </MotionPaper>
                         ))}
-                    </Grid>
+                    </Box>
                 </Box>
             </Container>
         </Box>

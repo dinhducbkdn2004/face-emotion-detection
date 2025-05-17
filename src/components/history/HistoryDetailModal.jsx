@@ -54,10 +54,26 @@ const emotionColors = {
     contempt: '#795548',
 };
 
+// Modal style
+const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: { xs: '95%', sm: '90%', md: '80%', lg: '75%' },
+    maxWidth: 1200,
+    maxHeight: { xs: '95vh', sm: '90vh' },
+    bgcolor: 'background.paper',
+    borderRadius: 4,
+    boxShadow: 24,
+    p: { xs: 2, sm: 3, md: 4 },
+    overflowY: 'auto',
+};
+
 const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-    const isSmall = useMediaQuery(theme.breakpoints.down('md'));
+    const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
     // State for face details expansion
     const [expandedFaces, setExpandedFaces] = useState({});
@@ -143,8 +159,9 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
 
     const handleDeleteConfirm = () => {
         setDeleteConfirmOpen(false);
-        if (onDelete) {
-            onDelete(item?.detection_id);
+        if (onDelete && item?.detection_id) {
+            onDelete(item.detection_id);
+            onClose(); // Đóng modal chi tiết sau khi xóa
         }
     };
 
@@ -724,20 +741,25 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            mb: 3,
+                            mb: { xs: 2, md: 3 },
                             background: `linear-gradient(45deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}20)`,
-                            p: 2,
+                            p: { xs: 1.5, md: 2 },
                             borderRadius: 3,
                         }}
                     >
                         <Typography
-                            variant="h5"
+                            variant={isMobile ? 'h6' : 'h5'}
                             fontWeight="bold"
                             sx={{
                                 background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 letterSpacing: '0.5px',
+                                fontSize: {
+                                    xs: '1.1rem',
+                                    sm: '1.25rem',
+                                    md: '1.5rem',
+                                },
                             }}
                         >
                             Emotion Detection Details
@@ -745,7 +767,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
 
                         <IconButton
                             onClick={onClose}
-                            size="small"
+                            size={isMobile ? 'small' : 'medium'}
                             sx={{
                                 bgcolor: 'background.paper',
                                 boxShadow: theme.shadows[2],
@@ -756,7 +778,9 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 },
                             }}
                         >
-                            <CloseIcon />
+                            <CloseIcon
+                                fontSize={isMobile ? 'small' : 'medium'}
+                            />
                         </IconButton>
                     </Box>
 
@@ -807,8 +831,8 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 sx={{
                                     display: 'flex',
                                     flexDirection: { xs: 'column', md: 'row' },
-                                    gap: 3,
-                                    mb: 3,
+                                    gap: { xs: 2, md: 3 },
+                                    mb: { xs: 2, md: 3 },
                                 }}
                             >
                                 {renderImageWithFaces()}
@@ -817,13 +841,13 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 <Box sx={{ flex: 1 }}>
                                     <Box
                                         sx={{
-                                            p: 2,
+                                            p: { xs: 1.5, md: 2 },
                                             borderRadius: 2,
                                             bgcolor:
                                                 theme.palette.mode === 'dark'
                                                     ? 'rgba(255,255,255,0.05)'
                                                     : 'rgba(0,0,0,0.02)',
-                                            mb: 2,
+                                            mb: { xs: 1.5, md: 2 },
                                         }}
                                     >
                                         <Box
@@ -834,7 +858,11 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                             }}
                                         >
                                             <AccessTimeIcon
-                                                fontSize="small"
+                                                fontSize={
+                                                    isMobile
+                                                        ? 'small'
+                                                        : 'medium'
+                                                }
                                                 sx={{
                                                     mr: 1,
                                                     color: theme.palette.primary
@@ -845,12 +873,20 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                                 variant="body2"
                                                 color="text.secondary"
                                                 fontWeight="medium"
+                                                sx={{
+                                                    fontSize: {
+                                                        xs: '0.75rem',
+                                                        md: '0.875rem',
+                                                    },
+                                                }}
                                             >
                                                 Detection Time
                                             </Typography>
                                         </Box>
                                         <Typography
-                                            variant="body1"
+                                            variant={
+                                                isMobile ? 'body2' : 'body1'
+                                            }
                                             fontWeight="medium"
                                         >
                                             {format(
@@ -863,14 +899,27 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                     <Button
                                         variant="outlined"
                                         color="error"
-                                        startIcon={<DeleteIcon />}
+                                        startIcon={
+                                            <DeleteIcon
+                                                fontSize={
+                                                    isMobile
+                                                        ? 'small'
+                                                        : 'medium'
+                                                }
+                                            />
+                                        }
                                         onClick={handleDeleteClick}
                                         sx={{
                                             borderRadius: 2,
                                             textTransform: 'none',
-                                            mb: 3,
+                                            mb: { xs: 2, md: 3 },
+                                            fontSize: {
+                                                xs: '0.75rem',
+                                                md: '0.875rem',
+                                            },
                                         }}
                                         fullWidth={isMobile}
+                                        size={isMobile ? 'small' : 'medium'}
                                     >
                                         Delete Result
                                     </Button>
@@ -883,9 +932,14 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 sx={{
                                     flex: 1,
                                     overflow: 'auto',
-                                    pr: 1,
+                                    pr: { xs: 0.5, md: 1 },
+                                    maxHeight: {
+                                        xs: '300px',
+                                        sm: '400px',
+                                        md: '450px',
+                                    },
                                     '&::-webkit-scrollbar': {
-                                        width: '8px',
+                                        width: '6px',
                                         borderRadius: '2px',
                                     },
                                     '&::-webkit-scrollbar-track': {
@@ -900,8 +954,8 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                         borderRadius: '4px',
                                         border:
                                             theme.palette.mode === 'dark'
-                                                ? '3px solid rgba(0,0,0,0.4)'
-                                                : '3px solid rgba(255,255,255,0.8)',
+                                                ? '2px solid rgba(0,0,0,0.4)'
+                                                : '2px solid rgba(255,255,255,0.8)',
                                         minHeight: '40px',
                                         '&:hover': {
                                             background:
@@ -913,10 +967,16 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 }}
                             >
                                 <Typography
-                                    variant={isMobile ? 'h6' : 'h5'}
+                                    variant={
+                                        isMobile
+                                            ? 'subtitle1'
+                                            : isTablet
+                                              ? 'h6'
+                                              : 'h5'
+                                    }
                                     fontWeight="bold"
                                     sx={{
-                                        mb: 2,
+                                        mb: { xs: 1, md: 2 },
                                         color: theme.palette.primary.main,
                                     }}
                                 >
@@ -964,79 +1024,35 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                         </Box>
                     ) : null}
                 </Box>
+
+                {/* Confirm Delete Modal */}
+                <ConfirmDeleteModal
+                    open={deleteConfirmOpen}
+                    onClose={handleDeleteCancel}
+                    onConfirm={handleDeleteConfirm}
+                    item={item}
+                />
             </>
         );
     };
 
     return (
-        <>
-            <Modal
-                open={open}
-                onClose={onClose}
-                aria-labelledby="history-detail-modal"
-                closeAfterTransition
-                BackdropComponent={Backdrop}
-                BackdropProps={{
+        <Modal
+            open={open}
+            onClose={onClose}
+            aria-labelledby="emotion-detection-detail-modal"
+            closeAfterTransition
+            slots={{ backdrop: Backdrop }}
+            slotProps={{
+                backdrop: {
                     timeout: 500,
-                }}
-            >
-                <Fade in={open}>
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: isSmall ? '95%' : '90%',
-                            maxWidth: 1000,
-                            maxHeight: '95vh', // Increase from 90vh to 95vh
-                            height: '95vh', // Increase from 90vh to 95vh
-                            bgcolor: 'background.paper',
-                            borderRadius: 4,
-                            boxShadow: theme.shadows[8],
-                            p: { xs: 2, sm: 3, md: 4 },
-                            overflow: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            '&::-webkit-scrollbar': {
-                                width: '14px',
-                                borderRadius: '7px',
-                            },
-                            '&::-webkit-scrollbar-track': {
-                                background: 'transparent',
-                                margin: '4px 0',
-                            },
-                            '&::-webkit-scrollbar-thumb': {
-                                background:
-                                    theme.palette.mode === 'dark'
-                                        ? 'rgba(255,255,255,0.2)'
-                                        : 'rgba(0,0,0,0.3)',
-                                borderRadius: '7px',
-                                border:
-                                    theme.palette.mode === 'dark'
-                                        ? '3px solid rgba(0,0,0,0.4)'
-                                        : '3px solid rgba(255,255,255,0.8)',
-                                minHeight: '40px',
-                                '&:hover': {
-                                    background:
-                                        theme.palette.mode === 'dark'
-                                            ? 'rgba(255,255,255,0.3)'
-                                            : 'rgba(0,0,0,0.5)',
-                                },
-                            },
-                        }}
-                    >
-                        {modalContent()}
-                    </Box>
-                </Fade>
-            </Modal>
-
-            <ConfirmDeleteModal
-                open={deleteConfirmOpen}
-                onClose={handleDeleteCancel}
-                onConfirm={handleDeleteConfirm}
-            />
-        </>
+                },
+            }}
+        >
+            <Fade in={open}>
+                <Box sx={modalStyle}>{modalContent()}</Box>
+            </Fade>
+        </Modal>
     );
 };
 

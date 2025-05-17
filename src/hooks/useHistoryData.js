@@ -131,10 +131,6 @@ const useHistoryData = (options = {}) => {
                 count += 1;
             }
 
-            console.log('API response:', response);
-            console.log('Calculated total count:', count);
-            console.log('Current skip:', skip, 'Current limit:', limit);
-
             // Cập nhật cache
             cache.current.data[key] = responseData;
             cache.current.timestamp[key] = Date.now();
@@ -190,6 +186,7 @@ const useHistoryData = (options = {}) => {
     // Handle filter changes
     const handlePageChange = useCallback((newPage) => {
         setPage(newPage);
+        // Không đặt lại fromDate và toDate khi chuyển trang
     }, []);
 
     const handleLimitChange = useCallback((newLimit) => {

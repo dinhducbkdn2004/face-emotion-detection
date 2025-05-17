@@ -80,8 +80,7 @@ export default function GuestUsageInfo() {
             </Box>
 
             <Typography variant="body2" sx={{ mb: 1 }}>
-                You have used {usageInfo?.usage_count || 0}/
-                {usageInfo?.max_usage || 5} emotion detection attempts.
+                You have used 3 emotion detection attempts.
             </Typography>
 
             <LinearProgress

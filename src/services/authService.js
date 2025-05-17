@@ -217,9 +217,7 @@ export const resetPassword = async (email) => {
             ToastService.error('Password reset link has expired');
             window.location.href = '/forgot-password?expired=true';
         } else if (error.code === 'auth/invalid-action-code') {
-            ToastService.error(
-                'Invalid or already used password reset link'
-            );
+            ToastService.error('Invalid or already used password reset link');
             window.location.href = '/forgot-password?expired=true';
         } else {
             ToastService.error('Cannot send password reset email');
@@ -264,14 +262,11 @@ export const verifyTokenWithBackend = async () => {
 
         // Lấy ID token từ Firebase
         const idToken = await currentUser.getIdToken(true);
-        console.log('Firebase ID token has been fetched');
 
         // Gửi ID token đến backend để xác minh
         const response = await apiClient.post('/auth/verify-token', {
             id_token: idToken,
         });
-
-        console.log('Backend verified token successfully:', response.data);
 
         // Lưu JWT token từ backend vào localStorage
         if (response.data.access_token && response.data.refresh_token) {
@@ -285,10 +280,18 @@ export const verifyTokenWithBackend = async () => {
     } catch (error) {
         console.error('Error verifying token with backend:', error);
         if (error.response?.status === 401) {
-            ToastService.error(
-                'Session expired, please login again.'
-            );
+            ToastService.error('Session expired, please login again.');
             clearAuthTokens();
+        } else if (error.response?.status === 404) {
+            // Trong môi trường development, có thể bỏ qua lỗi 404
+            if (
+                window.location.hostname !== 'localhost' &&
+                window.location.hostname !== '127.0.0.1'
+            ) {
+                ToastService.error(
+                    'Authentication server is unavailable. Please try again later.'
+                );
+            }
         } else {
             ToastService.error(
                 'Cannot verify with server. Please try again later.'

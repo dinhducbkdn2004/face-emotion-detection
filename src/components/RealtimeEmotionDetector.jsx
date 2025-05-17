@@ -130,17 +130,35 @@ const RealtimeEmotionDetector = () => {
         };
     }, []);
 
-    // Cập nhật trạng thái socket
+    // Hàm cập nhật trạng thái socket
     const updateSocketState = () => {
         const state = socketService.getSocketState();
-        console.log('Socket state updated:', state);
         setSocketState(state);
     };
 
-    // Xử lý sự kiện khởi tạo thành công
+    // Xử lý sự kiện socket được khởi tạo
     const handleInitialized = (data) => {
-        console.log('Socket initialized:', data);
+        // Cập nhật state
         updateSocketState();
+    };
+
+    // Xử lý phản hồi từ server về FPS
+    const handleErrorMessage = (data) => {
+        // Nếu server khuyến nghị giảm FPS
+        if (data.code === 429 && data.recommended_value) {
+            // Giới hạn FPS trong khoảng 1-5
+            const recommendedFps = Math.min(
+                Math.max(Math.round(data.recommended_value), 1),
+                5
+            );
+            setFps(recommendedFps);
+        }
+    };
+
+    // Xử lý cập nhật trạng thái từ server
+    const handleStatusUpdate = (data) => {
+        // Cập nhật trạng thái
+        setServerStatus(data);
     };
 
     // Xử lý kết quả nhận diện
@@ -171,42 +189,16 @@ const RealtimeEmotionDetector = () => {
         }
     };
 
-    // Xử lý thông báo lỗi
-    const handleErrorMessage = (data) => {
-        console.error('Lỗi từ server:', data);
-
-        // Nếu server báo quá tải, giảm frame rate
-        if (data.code === 429 && data.recommended_value) {
-            const recommendedFps = data.recommended_value;
-            frameIntervalRef.current = 1000 / recommendedFps;
-            setFps(recommendedFps);
-            console.log(`Điều chỉnh frame rate xuống ${recommendedFps} FPS`);
-        }
-
-        // Hiển thị lỗi
-        if (data.message) {
-            setError(data.message);
-        }
-    };
-
-    // Xử lý cập nhật trạng thái
-    const handleStatusUpdate = (data) => {
-        console.log('Cập nhật trạng thái:', data);
-        // Có thể hiển thị trạng thái nếu cần
-    };
-
     // Kết nối lại Socket.IO
     const reconnectSocket = async () => {
         try {
-            await socketService.closeConnection();
-            const socket = await socketService.initializeSocket();
-            if (socket) {
-                updateSocketState();
-                ToastService.success('Reconnected successfully');
-            }
+            await socketService.initializeSocket();
+            // Cập nhật trạng thái
+            updateSocketState();
+            return true;
         } catch (error) {
-            console.error('Error reconnecting:', error);
-            setError('Cannot reconnect. Please try again later.');
+            setError('Failed to connect to server. Please try again.');
+            return false;
         }
     };
 
@@ -217,43 +209,37 @@ const RealtimeEmotionDetector = () => {
             const videoDevices = devices.filter(
                 (device) => device.kind === 'videoinput'
             );
-            console.log('Available cameras:', videoDevices);
             setCameras(videoDevices);
 
-            // Nếu có camera và chưa chọn camera nào, chọn camera đầu tiên
             if (videoDevices.length > 0 && !selectedCamera) {
+                // Nếu chưa chọn camera nào, chọn camera đầu tiên
                 setSelectedCamera(videoDevices[0].deviceId);
             }
         } catch (error) {
-            console.error('Error getting camera list:', error);
+            setError('Error getting camera list. Please refresh the page.');
         }
     };
 
-    // Gọi lấy danh sách camera khi component mount
-    useEffect(() => {
-        getCameras();
-    }, []);
-
-    // Khởi tạo webcam
+    // Khởi tạo kết nối camera
     const initializeCamera = async () => {
         try {
-            // Nếu đã có stream trước đó, dừng nó
+            // Dừng stream hiện tại nếu có
             if (stream) {
                 stream.getTracks().forEach((track) => track.stop());
+                setStream(null);
             }
 
-            // Cấu hình camera
+            // Tạo constraints dựa trên camera đã chọn
             const constraints = {
                 video: {
                     width: { ideal: 640 },
                     height: { ideal: 480 },
+                    frameRate: { max: 30 },
                     deviceId: selectedCamera
                         ? { exact: selectedCamera }
                         : undefined,
                 },
             };
-
-            console.log('Using camera constraints:', constraints);
 
             // Yêu cầu quyền truy cập camera
             const mediaStream =
@@ -264,20 +250,8 @@ const RealtimeEmotionDetector = () => {
                 videoRef.current.srcObject = mediaStream;
                 setStream(mediaStream);
                 setError(null);
-
-                // Log để debug
-                console.log('Camera connected successfully');
-                mediaStream.getTracks().forEach((track) => {
-                    console.log(
-                        'Video track:',
-                        track.label,
-                        'enabled:',
-                        track.enabled
-                    );
-                });
             }
         } catch (err) {
-            console.error('Error accessing camera:', err);
             setError(
                 'Cannot access camera. Please ensure you have granted camera access.'
             );

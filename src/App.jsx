@@ -52,9 +52,11 @@ function App() {
             <Box
                 component="main"
                 sx={{
-                    width: '100%',
+                    width: '85%',
+                    maxWidth: '1100px',
+                    mx: 'auto',
                     height: '100%',
-                    pt: '80px', // 20 * 4 = 80px (equivalent to pt-20)
+                    pt: '70px', // Giảm từ 80px xuống còn 70px
                 }}
             >
                 <Routes>

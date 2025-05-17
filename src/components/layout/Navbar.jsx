@@ -119,12 +119,12 @@ const Navbar = () => {
                 position="fixed"
                 elevation={1}
                 sx={{
-                    width: { xs: '95%', sm: '90%', md: '83.333333%' },
+                    width: { xs: '100%', sm: '95%', md: '90%', lg: '85%' },
                     mx: 'auto',
-                    mt: 1.5,
-                    left: { xs: '2.5%', sm: '5%', md: '8.333333%' },
-                    right: { xs: '2.5%', sm: '5%', md: '8.333333%' },
-                    borderRadius: { xs: 1.5, sm: 2 },
+                    mt: { xs: 0, sm: 1 },
+                    left: { xs: 0, sm: '2.5%', md: '5%', lg: '7.5%' },
+                    right: { xs: 0, sm: '2.5%', md: '5%', lg: '7.5%' },
+                    borderRadius: { xs: 0, sm: 1.5, md: 2 },
                     bgcolor: (theme) =>
                         theme.palette.mode === 'light'
                             ? 'rgba(255, 255, 255, 0.8)'
@@ -145,6 +145,7 @@ const Navbar = () => {
                     sx={{
                         px: { xs: 1, sm: 2 },
                         justifyContent: 'space-between',
+                        minHeight: { xs: '48px', sm: '56px', md: '60px' },
                     }}
                 >
                     {/* Logo - Luôn ở bên trái */}
@@ -153,7 +154,7 @@ const Navbar = () => {
                         style={{
                             color: 'inherit',
                             textDecoration: 'none',
-                            fontSize: '1.25rem',
+                            fontSize: '1.1rem',
                             fontWeight: 'bold',
                             display: 'flex',
                             alignItems: 'center',
@@ -173,17 +174,29 @@ const Navbar = () => {
                                     marginRight: '8px',
                                     filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.2))',
                                     transition: 'all 0.3s ease',
-                                    height: '44px',
-                                    width: '44px',
+                                    height: '32px',
+                                    width: '32px',
                                 }}
                             />
                             <Typography
-                                variant="h6"
+                                variant="subtitle1"
                                 sx={{
                                     fontWeight: 'bold',
+                                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' },
+                                    display: { xs: 'none', sm: 'block' }
                                 }}
                             >
                                 Emotions Detection
+                            </Typography>
+                            <Typography
+                                variant="subtitle1"
+                                sx={{
+                                    fontWeight: 'bold',
+                                    fontSize: '0.9rem',
+                                    display: { xs: 'block', sm: 'none' }
+                                }}
+                            >
+                                Emotions
                             </Typography>
                         </Box>
                     </Link>
@@ -192,8 +205,8 @@ const Navbar = () => {
                     <Box
                         sx={{
                             display: { xs: 'none', sm: 'flex' },
-                            ml: 4,
-                            gap: 1,
+                            ml: { sm: 2, md: 4 },
+                            gap: { sm: 0.5, md: 1 },
                             flexGrow: 1,
                         }}
                     >
@@ -217,7 +230,9 @@ const Navbar = () => {
                                         sx={{
                                             minWidth: 'unset',
                                             borderRadius: 2,
-                                            px: { sm: 1, md: 2 },
+                                            px: { sm: 0.75, md: 1, lg: 2 },
+                                            py: { sm: 0.5 },
+                                            fontSize: { sm: '0.75rem', md: '0.875rem' },
                                             '&:hover': {
                                                 backgroundColor: (theme) =>
                                                     theme.palette.mode ===
@@ -249,121 +264,169 @@ const Navbar = () => {
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: { xs: 1, sm: 2 },
-                            ml: { xs: 'auto', sm: 0 }, // Đẩy sang phải trên mobile
+                            gap: { xs: 0.5, sm: 1 },
                         }}
                     >
-                        {/* Nút chuyển đổi theme */}
                         <ThemeToggle />
 
-                        {/* Tài khoản người dùng */}
-                        <Account />
+                        {isAuthenticated ? (
+                            <Account />
+                        ) : (
+                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                <Button
+                                    component={Link}
+                                    to="/login"
+                                    color="primary"
+                                    variant="text"
+                                    startIcon={<LoginIcon />}
+                                    sx={{ borderRadius: 2, ml: 1, fontSize: { sm: '0.75rem', md: '0.875rem' } }}
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{ display: { xs: 'none', md: 'inline' } }}
+                                    >
+                                        Login
+                                    </Box>
+                                </Button>
 
-                        {/* Nút menu trên mobile */}
+                                <Button
+                                    component={Link}
+                                    to="/register"
+                                    color="primary"
+                                    variant="text"
+                                    startIcon={<RegisterIcon />}
+                                    sx={{ borderRadius: 2, ml: 1, fontSize: { sm: '0.75rem', md: '0.875rem' } }}
+                                >
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            display: { xs: 'none', md: 'inline' },
+                                        }}
+                                    >
+                                        Register
+                                    </Box>
+                                </Button>
+                            </Box>
+                        )}
+
+                        {/* Mobile menu button */}
                         <IconButton
                             color="inherit"
-                            aria-label="open drawer"
-                            edge="end"
+                            aria-label="menu"
                             onClick={toggleMobileMenu}
-                            sx={{ display: { sm: 'none' } }}
+                            sx={{
+                                display: { sm: 'none' },
+                                ml: 0.5,
+                                p: 0.5,
+                            }}
                         >
-                            <MenuIcon />
+                            <MenuIcon fontSize="small" />
                         </IconButton>
                     </Box>
                 </Toolbar>
             </AppBar>
 
-            {/* Menu trên mobile */}
+            {/* Mobile Drawer */}
             <Drawer
                 anchor="right"
                 open={mobileMenuOpen}
                 onClose={handleMenuClose}
                 sx={{
                     '& .MuiDrawer-paper': {
-                        width: 260,
-                        mt: 7, // Space for AppBar
-                        bgcolor: 'background.paper',
+                        width: '70%',
+                        maxWidth: 280,
+                        pt: 1,
                     },
                 }}
             >
-                <List sx={{ pt: 2 }}>
-                    {/* Danh sách menu chính */}
-                    {navItems.map((item) => {
-                        if (item.requiredAuth && !isAuthenticated) return null;
+                <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img
+                        src="/logo-duc-bao.svg"
+                        alt="Logo"
+                        style={{
+                            height: '28px',
+                            width: '28px',
+                            marginRight: '8px',
+                        }}
+                    />
+                    <Typography variant="subtitle1" fontWeight="bold">
+                        Emotions Detection
+                    </Typography>
+                </Box>
+                <Divider sx={{ my: 1 }} />
 
-                        return (
+                <List sx={{ pt: 0 }}>
+                    {navItems
+                        .filter(
+                            (item) => !item.requiredAuth || isAuthenticated
+                        )
+                        .map((item) => (
                             <ListItem key={item.path} disablePadding>
                                 <ListItemButton
                                     component={Link}
                                     to={item.path}
-                                    selected={isActive(item.path)}
                                     onClick={handleMenuClose}
+                                    selected={isActive(item.path)}
                                     sx={{
-                                        borderRadius: 2,
+                                        py: 1,
+                                        borderRadius: 1,
                                         mx: 1,
                                         mb: 0.5,
                                     }}
                                 >
-                                    <ListItemIcon
-                                        sx={{
-                                            color: isActive(item.path)
-                                                ? 'primary.main'
-                                                : 'inherit',
-                                            minWidth: 40,
-                                        }}
-                                    >
+                                    <ListItemIcon sx={{ minWidth: 36 }}>
                                         {item.icon}
                                     </ListItemIcon>
-                                    <ListItemText primary={item.name} />
+                                    <ListItemText
+                                        primary={item.name}
+                                        primaryTypographyProps={{
+                                            fontSize: '0.875rem',
+                                        }}
+                                    />
                                 </ListItemButton>
                             </ListItem>
-                        );
-                    })}
-
-                    <Divider sx={{ my: 1 }} />
-
-                    {/* Danh sách menu tài khoản */}
-                    {accountItems.map((item) => (
-                        <div key={item.name}>
-                            {item.divider && <Divider sx={{ my: 1 }} />}
-                            <ListItem disablePadding>
-                                <ListItemButton
-                                    component={Link}
-                                    to={item.path}
-                                    onClick={item.onClick || handleMenuClose}
-                                    sx={{
-                                        borderRadius: 2,
-                                        mx: 1,
-                                        mb: 0.5,
-                                        bgcolor: item.highlight
-                                            ? 'primary.main'
-                                            : 'transparent',
-                                        color: item.highlight
-                                            ? 'primary.contrastText'
-                                            : 'inherit',
-                                        '&:hover': {
-                                            bgcolor: item.highlight
-                                                ? 'primary.dark'
-                                                : undefined,
-                                        },
+                        ))}
+                </List>
+                <Divider sx={{ my: 1 }} />
+                <List>
+                    {accountItems.map((item, index) => (
+                        <ListItem key={index} disablePadding>
+                            <ListItemButton
+                                component={Link}
+                                to={item.path}
+                                onClick={item.onClick}
+                                sx={{
+                                    py: 1,
+                                    borderRadius: 1,
+                                    mx: 1,
+                                    mb: 0.5,
+                                }}
+                            >
+                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                    {item.icon}
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={item.name}
+                                    primaryTypographyProps={{
+                                        fontSize: '0.875rem',
+                                        color: item.name === 'Logout' ? 'error.main' : 'inherit',
                                     }}
-                                >
-                                    <ListItemIcon
-                                        sx={{
-                                            color: item.highlight
-                                                ? 'primary.contrastText'
-                                                : undefined,
-                                            minWidth: 40,
-                                        }}
-                                    >
-                                        {item.icon}
-                                    </ListItemIcon>
-                                    <ListItemText primary={item.name} />
-                                </ListItemButton>
-                            </ListItem>
-                        </div>
+                                />
+                            </ListItemButton>
+                        </ListItem>
                     ))}
                 </List>
+
+                <Box sx={{ p: 2, mt: 'auto' }}>
+                    <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        align="center"
+                        display="block"
+                    >
+                        &copy; 2023 Emotions Detection App
+                    </Typography>
+                </Box>
             </Drawer>
         </>
     );

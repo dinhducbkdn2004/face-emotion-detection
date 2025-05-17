@@ -91,9 +91,15 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // Lấy base URL từ apiClient hoặc env
-        const baseUrl =
-            import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn';
+        // Kiểm tra môi trường
+        const isDevelopment =
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1';
+
+        // Trong môi trường development, sử dụng URL tương đối để đi qua proxy
+        const baseUrl = isDevelopment
+            ? ''
+            : import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn';
         const url = `${baseUrl}/api/detect/batch`;
 
         // Sử dụng fetch API để xử lý SSE
@@ -131,7 +137,6 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
                 if (line.startsWith('data: ')) {
                     try {
                         const jsonData = JSON.parse(line.slice(6));
-                        console.log('Received SSE data:', jsonData);
 
                         // Thêm filename vào kết quả nếu chưa có
                         if (!jsonData.filename && jsonData.detection_id) {
@@ -274,11 +279,7 @@ export const getEmotionHistory = async (skip = 0, limit = 10, filters = {}) => {
             url += `&keyword=${encodeURIComponent(keyword)}`;
         }
 
-        console.log('Calling API:', url);
         const response = await apiClient.get(url);
-
-        // In log cấu trúc phản hồi để debug
-        console.log('API response:', response);
 
         // Cấu trúc phản hồi API có thể là:
         // 1. { data: [...items], totalCount: number }

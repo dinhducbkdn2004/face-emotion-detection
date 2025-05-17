@@ -72,17 +72,12 @@ const HistoryDetail = () => {
     }, [id]);
 
     const handleDelete = async () => {
-        if (
-            window.confirm(
-                'Are you sure you want to delete this detection result?'
-            )
-        ) {
+
             try {
                 await deleteDetection(id);
             } catch (error) {
                 console.error('Error deleting detection result:', error);
             }
-        }
     };
 
     // Render skeleton cho chi tiết

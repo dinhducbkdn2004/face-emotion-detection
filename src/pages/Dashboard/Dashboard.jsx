@@ -70,26 +70,28 @@ const Dashboard = () => {
         <Container
             maxWidth="lg"
             sx={{
-                py: { xs: 3, sm: 5 },
+                py: { xs: 2, sm: 4 },
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                minHeight: 'calc(100vh - 80px)',
+                minHeight: 'calc(100vh - 100px)',
+                width: '100%',
+                mx: 'auto',
             }}
         >
             <Paper
                 elevation={0}
                 sx={{
-                    p: { xs: 2, sm: 3, md: 4 },
-                    borderRadius: 4,
+                    p: { xs: 2, sm: 2.5, md: 3 },
+                    borderRadius: 3,
                     background:
                         theme.palette.mode === 'dark'
                             ? 'linear-gradient(145deg, #1e1e1e, #282828)'
                             : 'linear-gradient(145deg, #fefefe, #f5f5f5)',
                     boxShadow:
                         theme.palette.mode === 'dark'
-                            ? '0 8px 32px rgba(0, 0, 0, 0.2)'
-                            : '0 8px 32px rgba(0, 0, 0, 0.05)',
+                            ? '0 6px 24px rgba(0, 0, 0, 0.2)'
+                            : '0 6px 24px rgba(0, 0, 0, 0.05)',
                     overflow: 'hidden',
                     maxWidth: '100%',
                     width: '100%',
@@ -103,7 +105,7 @@ const Dashboard = () => {
                             variant={isMobile ? 'h5' : 'h4'}
                             fontWeight="bold"
                             sx={{
-                                mb: 3,
+                                mb: 2,
                                 textAlign: 'center',
                                 background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
@@ -114,20 +116,20 @@ const Dashboard = () => {
                             Face Emotion Detection
                         </Typography>
 
-                        <Divider sx={{ mb: 3 }} />
+                        <Divider sx={{ mb: 2 }} />
                     </>
                 )}
 
                 <Paper
                     elevation={0}
                     sx={{
-                        borderRadius: 3,
+                        borderRadius: 2.5,
                         overflow: 'hidden',
                         bgcolor: theme.palette.background.paper,
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.04)',
                     }}
                 >
-                    <Box sx={{ px: { xs: 1, sm: 2 } }}>
+                    <Box sx={{ px: { xs: 1, sm: 1.5 } }}>
                         <Tabs
                             value={tabValue}
                             onChange={handleTabChange}
@@ -139,10 +141,10 @@ const Dashboard = () => {
                                 '& .MuiTab-root': {
                                     fontWeight: 'medium',
                                     fontSize: {
-                                        xs: '0.9rem',
-                                        sm: '1rem',
+                                        xs: '0.8rem',
+                                        sm: '0.9rem',
                                     },
-                                    py: 2,
+                                    py: 1.5,
                                     transition: 'all 0.3s ease',
                                     color: theme.palette.text.secondary,
                                     '&.Mui-selected': {
@@ -151,8 +153,8 @@ const Dashboard = () => {
                                     },
                                 },
                                 '& .MuiTabs-indicator': {
-                                    height: 3,
-                                    borderRadius: '3px 3px 0 0',
+                                    height: 2.5,
+                                    borderRadius: '2.5px 2.5px 0 0',
                                 },
                             }}
                         >
@@ -164,7 +166,9 @@ const Dashboard = () => {
                                 }
                                 id="emotion-tab-0"
                                 aria-controls="emotion-tabpanel-0"
-                                icon={<PhotoCamera />}
+                                icon={
+                                    <PhotoCamera sx={{ fontSize: '1.1rem' }} />
+                                }
                                 iconPosition="start"
                             />
                             <Tab
@@ -175,18 +179,18 @@ const Dashboard = () => {
                                 }
                                 id="emotion-tab-1"
                                 aria-controls="emotion-tabpanel-1"
-                                icon={<PhotoLibrary />}
+                                icon={
+                                    <PhotoLibrary sx={{ fontSize: '1.1rem' }} />
+                                }
                                 iconPosition="start"
                             />
                             <Tab
                                 label={
-                                    isMobile
-                                        ? 'Realtime'
-                                        : 'Realtime Detection'
+                                    isMobile ? 'Realtime' : 'Realtime Detection'
                                 }
                                 id="emotion-tab-2"
                                 aria-controls="emotion-tabpanel-2"
-                                icon={<Videocam />}
+                                icon={<Videocam sx={{ fontSize: '1.1rem' }} />}
                                 iconPosition="start"
                             />
                         </Tabs>

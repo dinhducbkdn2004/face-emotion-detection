@@ -186,10 +186,7 @@ const BatchEmotionDetector = () => {
 
     // Xử lý kết quả mới từ SSE hoặc API
     const handleNewResult = (result) => {
-        console.log('Received new result:', result);
-
         if (!result) {
-            console.error('Empty result');
             return;
         }
 
@@ -199,11 +196,6 @@ const BatchEmotionDetector = () => {
 
             // Xử lý kết quả có lỗi
             if (result.error) {
-                console.log(
-                    'Xử lý kết quả lỗi:',
-                    result.filename,
-                    result.error
-                );
                 const existingIndex = updatedResults.findIndex(
                     (r) => r.filename === result.filename
                 );
@@ -229,11 +221,6 @@ const BatchEmotionDetector = () => {
             }
 
             // Xử lý kết quả thành công
-            console.log(
-                'Xử lý kết quả thành công:',
-                result.filename,
-                result.detection_id
-            );
 
             // Tìm file gốc tương ứng
             const originalFile = selectedFiles.find(
@@ -249,10 +236,6 @@ const BatchEmotionDetector = () => {
             );
 
             if (existingIndex >= 0) {
-                console.log(
-                    'Cập nhật kết quả cho:',
-                    result.filename || updatedResults[existingIndex].filename
-                );
                 updatedResults[existingIndex] = {
                     ...updatedResults[existingIndex],
                     ...result,
@@ -260,10 +243,6 @@ const BatchEmotionDetector = () => {
                     status: 'completed',
                 };
             } else {
-                console.log(
-                    'Thêm kết quả mới:',
-                    result.filename || `File #${updatedResults.length + 1}`
-                );
                 updatedResults.push({
                     ...result,
                     filename:
@@ -273,7 +252,6 @@ const BatchEmotionDetector = () => {
                 });
             }
 
-            console.log('Kết quả đã cập nhật:', updatedResults);
             return updatedResults;
         });
 

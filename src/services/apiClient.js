@@ -1,8 +1,16 @@
 import axios from 'axios';
 
+// Kiểm tra xem có đang ở môi trường development không (sử dụng localhost)
+const isDevelopment =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
 // Tạo một instance axios với cấu hình cơ bản
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn',
+    // Trong môi trường development, sử dụng URL tương đối để đi qua proxy
+    baseURL: isDevelopment
+        ? ''
+        : import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn',
     timeout: 60000, // Tăng timeout lên 60 giây
     headers: {
         'Content-Type': 'application/json',
@@ -21,16 +29,10 @@ apiClient.interceptors.request.use(
         // Kiểm tra có accessToken trong biến hoặc localStorage
         const token = accessToken || localStorage.getItem('accessToken');
 
-        // Log để debug
-        console.log('Request URL:', config.url);
-        console.log('Authorization Token:', token ? 'Có' : 'Không');
-
         if (token) {
             // Đảm bảo headers tồn tại
             config.headers = config.headers || {};
             config.headers['Authorization'] = `Bearer ${token}`;
-        } else {
-            console.log('Không có token');
         }
 
         return config;
@@ -48,13 +50,6 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Log để debug
-        console.log('Lỗi từ server:', {
-            status: error.response?.status,
-            data: error.response?.data,
-            url: originalRequest?.url,
-        });
-
         // Check token expired
         if (
             error.response &&
@@ -63,7 +58,6 @@ apiClient.interceptors.response.use(
             refreshToken
         ) {
             originalRequest._retry = true;
-            console.log('Token hết hạn, thử làm mới token...');
 
             try {
                 // Làm mới token

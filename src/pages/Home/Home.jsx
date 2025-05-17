@@ -206,12 +206,12 @@ export default function Home() {
                     theme.palette.mode === 'dark'
                         ? 'linear-gradient(to bottom, #121212, #1e1e1e)'
                         : 'linear-gradient(to bottom, #f9fafb, #f5f5f5)',
-                minHeight: 'calc(100vh - 80px)',
-                py: { xs: 4, md: 6 },
+                minHeight: 'calc(100vh - 70px)',
+                py: { xs: 3, md: 4 },
             }}
         >
             <style>{shimmerKeyframes}</style>
-            <Container maxWidth="lg">
+            <Container maxWidth="lg" sx={{ width: '85%', mx: 'auto' }}>
                 {/* Hero Section */}
                 <MotionBox
                     initial={{ opacity: 0, y: 50 }}
@@ -219,13 +219,13 @@ export default function Home() {
                     transition={{ duration: 0.8 }}
                     sx={{
                         textAlign: 'center',
-                        mb: { xs: 6, md: 10 },
+                        mb: { xs: 4, md: 6 },
                         px: { xs: 2, sm: 0 },
                     }}
                 >
                     <Typography
                         component={motion.h1}
-                        variant={isMobile ? 'h3' : isTablet ? 'h2' : 'h1'}
+                        variant={isMobile ? 'h4' : isTablet ? 'h3' : 'h2'}
                         fontWeight="bold"
                         gutterBottom
                         initial={{ opacity: 0, y: 20 }}
@@ -233,11 +233,12 @@ export default function Home() {
                         transition={{ delay: 0.2 }}
                         sx={{
                             lineHeight: 1.2,
-                            mb: { xs: 2, md: 3 },
+                            mb: { xs: 1, md: 2 },
                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
-                            mr: 2,
+                            mr: 1,
+                            display: 'inline-block',
                         }}
                     >
                         Discover
@@ -248,16 +249,16 @@ export default function Home() {
                                 position: 'relative',
                                 mx: 1,
                                 minWidth: isMobile
-                                    ? '120px'
+                                    ? '100px'
                                     : isTablet
-                                      ? '180px'
-                                      : '220px',
+                                      ? '150px'
+                                      : '180px',
                             }}
                         >
                             <Typography
                                 component="span"
                                 variant={
-                                    isMobile ? 'h3' : isTablet ? 'h2' : 'h1'
+                                    isMobile ? 'h4' : isTablet ? 'h3' : 'h2'
                                 }
                                 fontWeight="bold"
                                 sx={{
@@ -285,8 +286,8 @@ export default function Home() {
                                 sx={{
                                     position: 'absolute',
                                     width: '100%',
-                                    height: '4px',
-                                    bottom: -4,
+                                    height: '3px',
+                                    bottom: -3,
                                     left: 0,
                                     background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                     borderRadius: '2px',
@@ -296,7 +297,7 @@ export default function Home() {
                     </Typography>
                     <Typography
                         component={motion.h1}
-                        variant={isMobile ? 'h3' : isTablet ? 'h2' : 'h1'}
+                        variant={isMobile ? 'h4' : isTablet ? 'h3' : 'h2'}
                         fontWeight="bold"
                         gutterBottom
                         initial={{ opacity: 0, y: 20 }}
@@ -304,22 +305,24 @@ export default function Home() {
                         transition={{ delay: 0.2 }}
                         sx={{
                             lineHeight: 1.2,
-                            mb: { xs: 2, md: 3 },
+                            mb: { xs: 2, md: 2 },
                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
+                            display: 'block',
+                            mt: 0.5,
                         }}
                     >
                         Emotions
                     </Typography>
 
                     <Typography
-                        variant={isMobile ? 'body1' : 'h5'}
+                        variant={isMobile ? 'body2' : 'body1'}
                         color="text.secondary"
                         sx={{
-                            maxWidth: '800px',
+                            maxWidth: '700px',
                             mx: 'auto',
-                            lineHeight: 1.8,
+                            lineHeight: 1.6,
                         }}
                         component={motion.p}
                         initial={{ opacity: 0 }}
@@ -365,13 +368,14 @@ export default function Home() {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.5, duration: 0.5 }}
                             sx={{
-                                mt: 5,
-                                p: 3,
-                                maxWidth: '800px',
+                                mt: 4,
+                                p: 2.5,
+                                maxWidth: '700px',
+                                width: '85%',
                                 mx: 'auto',
                                 borderRadius: 2,
                                 border: `1px solid ${theme.palette.divider}`,
-                                boxShadow: 3,
+                                boxShadow: 2,
                                 bgcolor:
                                     theme.palette.mode === 'dark'
                                         ? 'rgba(37, 37, 37, 0.9)'
@@ -379,14 +383,14 @@ export default function Home() {
                             }}
                         >
                             <Typography
-                                variant="h5"
+                                variant="h6"
                                 color="primary"
                                 fontWeight="bold"
                                 gutterBottom
                             >
                                 Guest mode
                             </Typography>
-                            <Typography variant="body1" sx={{ mb: 2 }}>
+                            <Typography variant="body2" sx={{ mb: 2 }}>
                                 You can try the emotion detection feature
                                 without creating an account! Each device is
                                 provided with 5 free detections.
@@ -395,17 +399,17 @@ export default function Home() {
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'center',
-                                    mt: 2,
+                                    mt: 1.5,
                                 }}
                             >
                                 <Button
                                     variant="outlined"
-                                    size="large"
+                                    size="medium"
                                     startIcon={<Speed />}
                                     onClick={() => navigate('/guest')}
                                     sx={{
-                                        py: 1.5,
-                                        px: 4,
+                                        py: 1,
+                                        px: 3,
                                         borderRadius: 2,
                                         fontWeight: 'medium',
                                         borderColor: theme.palette.success.main,
@@ -415,6 +419,7 @@ export default function Home() {
                                                 theme.palette.success.dark,
                                             backgroundColor:
                                                 theme.palette.success.light,
+                                            color: 'white',
                                         },
                                     }}
                                 >
@@ -426,21 +431,21 @@ export default function Home() {
                 </MotionBox>
 
                 {/* Features Section */}
-                <Box sx={{ mb: { xs: 8, md: 12 } }}>
+                <Box sx={{ mb: { xs: 6, md: 8 } }}>
                     <MotionBox
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7 }}
                         viewport={{ once: true, margin: '-100px' }}
-                        sx={{ textAlign: 'center', mb: 6 }}
+                        sx={{ textAlign: 'center', mb: 4 }}
                     >
                         <Typography
-                            variant={isMobile ? 'h4' : 'h3'}
+                            variant={isMobile ? 'h5' : 'h4'}
                             component="h2"
                             gutterBottom
                             fontWeight="bold"
                             sx={{
-                                mb: 2,
+                                mb: 1.5,
                                 background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
@@ -449,12 +454,12 @@ export default function Home() {
                             Key Features
                         </Typography>
                         <Typography
-                            variant="body1"
+                            variant="body2"
                             color="text.secondary"
                             sx={{
-                                maxWidth: 700,
+                                maxWidth: 600,
                                 mx: 'auto',
-                                mb: 4,
+                                mb: 3,
                             }}
                         >
                             Our platform provides cutting-edge emotion detection
@@ -464,7 +469,7 @@ export default function Home() {
 
                     <Grid
                         container
-                        spacing={{ xs: 3, md: 4 }}
+                        spacing={{ xs: 2, md: 3 }}
                         component={motion.div}
                         variants={containerVariants}
                         initial="hidden"
@@ -480,8 +485,8 @@ export default function Home() {
                                     variants={itemVariants}
                                     elevation={0}
                                     whileHover={{
-                                        scale: 1.03,
-                                        boxShadow: theme.shadows[10],
+                                        scale: 1.02,
+                                        boxShadow: theme.shadows[8],
                                     }}
                                     transition={{
                                         type: 'spring',
@@ -489,9 +494,9 @@ export default function Home() {
                                         damping: 15,
                                     }}
                                     sx={{
-                                        p: 4,
+                                        p: 3,
                                         height: '100%',
-                                        borderRadius: 4,
+                                        borderRadius: 3,
                                         bgcolor: 'background.paper',
                                         border: 1,
                                         borderColor: 'divider',
@@ -517,7 +522,7 @@ export default function Home() {
                                             content: '""',
                                             position: 'absolute',
                                             width: '100%',
-                                            height: '4px',
+                                            height: '3px',
                                             bottom: 0,
                                             left: 0,
                                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
@@ -527,7 +532,7 @@ export default function Home() {
                                             zIndex: 1,
                                         },
                                         '&:hover': {
-                                            transform: 'translateY(-8px)',
+                                            transform: 'translateY(-5px)',
                                             '&:before': {
                                                 transform: 'scaleX(1)',
                                             },
@@ -556,21 +561,21 @@ export default function Home() {
                                         <Box
                                             className="feature-icon"
                                             sx={{
-                                                mb: 3,
+                                                mb: 2,
                                                 color: theme.palette.primary
                                                     .main,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                p: 2,
+                                                p: 1.5,
                                                 bgcolor:
                                                     theme.palette.mode ===
                                                     'dark'
                                                         ? 'rgba(255,255,255,0.05)'
                                                         : 'rgba(0,0,0,0.02)',
                                                 borderRadius: '50%',
-                                                width: 80,
-                                                height: 80,
+                                                width: 60,
+                                                height: 60,
                                                 transition: 'all 0.5s ease',
                                                 boxShadow:
                                                     '0 4px 12px rgba(0,0,0,0.05)',
@@ -579,7 +584,7 @@ export default function Home() {
                                             {feature.icon}
                                         </Box>
                                         <Typography
-                                            variant="h5"
+                                            variant="h6"
                                             gutterBottom
                                             fontWeight="bold"
                                             sx={{ mb: 1 }}
@@ -587,7 +592,7 @@ export default function Home() {
                                             {feature.title}
                                         </Typography>
                                         <Typography
-                                            variant="body1"
+                                            variant="body2"
                                             color="text.secondary"
                                         >
                                             {feature.description}
@@ -600,21 +605,21 @@ export default function Home() {
                 </Box>
 
                 {/* Benefits Section */}
-                <Box sx={{ mb: { xs: 8, md: 12 }, py: { xs: 4, md: 6 } }}>
+                <Box sx={{ mb: { xs: 6, md: 8 }, py: { xs: 3, md: 4 } }}>
                     <MotionBox
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7 }}
                         viewport={{ once: true, margin: '-100px' }}
-                        sx={{ textAlign: 'center', mb: 6 }}
+                        sx={{ textAlign: 'center', mb: 4 }}
                     >
                         <Typography
-                            variant={isMobile ? 'h4' : 'h3'}
+                            variant={isMobile ? 'h5' : 'h4'}
                             component="h2"
                             gutterBottom
                             fontWeight="bold"
                             sx={{
-                                mb: 2,
+                                mb: 1.5,
                                 background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
@@ -623,12 +628,12 @@ export default function Home() {
                             Why Choose Us
                         </Typography>
                         <Typography
-                            variant="body1"
+                            variant="body2"
                             color="text.secondary"
                             sx={{
-                                maxWidth: 700,
+                                maxWidth: 600,
                                 mx: 'auto',
-                                mb: 4,
+                                mb: 3,
                             }}
                         >
                             Our emotion detection platform offers numerous
@@ -638,9 +643,9 @@ export default function Home() {
 
                     <Grid
                         container
-                        spacing={3}
+                        spacing={2}
                         sx={{
-                            mb: 8,
+                            mb: 6,
                             justifyContent: 'center',
                             alignItems: 'center',
                             textAlign: 'center',
@@ -657,16 +662,16 @@ export default function Home() {
                                     variants={itemVariants}
                                     elevation={0}
                                     sx={{
-                                        p: 3,
+                                        p: 2.5,
                                         height: '100%',
-                                        borderRadius: 4,
+                                        borderRadius: 3,
                                         bgcolor: 'background.paper',
                                         border: 1,
                                         borderColor: 'divider',
                                         transition: 'all 0.3s ease',
                                         '&:hover': {
-                                            transform: 'translateY(-5px)',
-                                            boxShadow: theme.shadows[4],
+                                            transform: 'translateY(-4px)',
+                                            boxShadow: theme.shadows[3],
                                             '& .benefit-icon': {
                                                 animation:
                                                     'float 3s ease infinite',
@@ -686,13 +691,14 @@ export default function Home() {
                                             sx={{
                                                 color: theme.palette.primary
                                                     .main,
-                                                mb: 2,
+                                                mb: 1.5,
+                                                fontSize: '0.9em',
                                             }}
                                         >
                                             {benefit.icon}
                                         </Box>
                                         <Typography
-                                            variant="h6"
+                                            variant="subtitle1"
                                             fontWeight="bold"
                                             gutterBottom
                                         >
@@ -701,6 +707,7 @@ export default function Home() {
                                         <Typography
                                             variant="body2"
                                             color="text.secondary"
+                                            sx={{ fontSize: '0.85rem' }}
                                         >
                                             {benefit.description}
                                         </Typography>
@@ -712,21 +719,21 @@ export default function Home() {
                 </Box>
 
                 {/* Testimonials Section */}
-                <Box sx={{ mb: { xs: 8, md: 12 } }}>
+                <Box sx={{ mb: { xs: 6, md: 8 } }}>
                     <MotionBox
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.7 }}
                         viewport={{ once: true, margin: '-100px' }}
-                        sx={{ textAlign: 'center', mb: 6 }}
+                        sx={{ textAlign: 'center', mb: 4 }}
                     >
                         <Typography
-                            variant={isMobile ? 'h4' : 'h3'}
+                            variant={isMobile ? 'h5' : 'h4'}
                             component="h2"
                             gutterBottom
                             fontWeight="bold"
                             sx={{
-                                mb: 2,
+                                mb: 1.5,
                                 background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
@@ -735,12 +742,12 @@ export default function Home() {
                             What Our Users Say
                         </Typography>
                         <Typography
-                            variant="body1"
+                            variant="body2"
                             color="text.secondary"
                             sx={{
-                                maxWidth: 700,
+                                maxWidth: 600,
                                 mx: 'auto',
-                                mb: 4,
+                                mb: 3,
                             }}
                         >
                             Here's what professionals and businesses are saying
@@ -749,7 +756,7 @@ export default function Home() {
                     </MotionBox>
 
                     <Grid
-                        spacing={4}
+                        spacing={3}
                         justifyContent="center"
                         component={motion.div}
                         variants={containerVariants}
@@ -759,7 +766,7 @@ export default function Home() {
                         sx={{
                             justifyContent: 'center',
                             margin: '0 auto',
-                            gap: 4,
+                            gap: 3,
                         }}
                     >
                         {testimonials.map((testimonial, index) => (
@@ -768,8 +775,8 @@ export default function Home() {
                                     variants={itemVariants}
                                     elevation={0}
                                     whileHover={{
-                                        y: -10,
-                                        boxShadow: theme.shadows[10],
+                                        y: -8,
+                                        boxShadow: theme.shadows[6],
                                     }}
                                     transition={{
                                         type: 'spring',
@@ -778,9 +785,9 @@ export default function Home() {
                                     }}
                                     sx={{
                                         height: '100%',
-                                        borderRadius: 4,
+                                        borderRadius: 3,
                                         border: 1,
-                                        marginBottom: 3,
+                                        marginBottom: 2.5,
                                         borderColor: 'divider',
                                         position: 'relative',
                                         overflow: 'hidden',
@@ -791,7 +798,7 @@ export default function Home() {
                                             top: 0,
                                             left: 0,
                                             width: '100%',
-                                            height: '5px',
+                                            height: '4px',
                                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                                             opacity: 0,
                                             transition: 'opacity 0.3s ease',
@@ -808,16 +815,16 @@ export default function Home() {
                                     }}
                                 >
                                     <CardContent
-                                        sx={{ p: 4, position: 'relative' }}
+                                        sx={{ p: 3, position: 'relative' }}
                                     >
                                         <Typography
                                             className="testimonial-quote"
                                             sx={{
                                                 position: 'absolute',
-                                                right: 20,
-                                                top: 20,
+                                                right: 15,
+                                                top: 15,
                                                 fontFamily: 'Georgia, serif',
-                                                fontSize: '5rem',
+                                                fontSize: '4rem',
                                                 lineHeight: 1,
                                                 color: 'rgba(0,0,0,0.06)',
                                                 fontWeight: 'bold',
@@ -838,18 +845,18 @@ export default function Home() {
                                             }}
                                         >
                                             <Typography
-                                                variant="body1"
+                                                variant="body2"
                                                 color="text.secondary"
                                                 paragraph
                                                 sx={{
                                                     fontStyle: 'italic',
-                                                    mb: 3,
+                                                    mb: 2,
                                                 }}
                                             >
                                                 {testimonial.text}
                                             </Typography>
 
-                                            <Divider sx={{ my: 2 }} />
+                                            <Divider sx={{ my: 1.5 }} />
 
                                             <Box
                                                 sx={{
@@ -860,9 +867,9 @@ export default function Home() {
                                                 <Avatar
                                                     src={testimonial.avatar}
                                                     sx={{
-                                                        width: 50,
-                                                        height: 50,
-                                                        mr: 2,
+                                                        width: 40,
+                                                        height: 40,
+                                                        mr: 1.5,
                                                         border: 2,
                                                         borderColor:
                                                             'primary.main',
@@ -870,13 +877,13 @@ export default function Home() {
                                                 />
                                                 <Box>
                                                     <Typography
-                                                        variant="subtitle1"
+                                                        variant="subtitle2"
                                                         fontWeight="bold"
                                                     >
                                                         {testimonial.name}
                                                     </Typography>
                                                     <Typography
-                                                        variant="body2"
+                                                        variant="caption"
                                                         color="text.secondary"
                                                     >
                                                         {testimonial.company}
@@ -899,21 +906,21 @@ export default function Home() {
                     viewport={{ once: true }}
                     sx={{
                         textAlign: 'center',
-                        py: { xs: 5, md: 8 },
-                        px: { xs: 3, md: 8 },
-                        mb: { xs: 4, md: 6 },
-                        borderRadius: 4,
+                        py: { xs: 4, md: 6 },
+                        px: { xs: 2, md: 6 },
+                        mb: { xs: 3, md: 4 },
+                        borderRadius: 3,
                         background: `linear-gradient(135deg, ${theme.palette.primary.main}20, ${theme.palette.secondary.main}30)`,
                         backdropFilter: 'blur(10px)',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+                        boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
                     }}
                 >
                     <Typography
-                        variant={isMobile ? 'h4' : 'h3'}
+                        variant={isMobile ? 'h5' : 'h4'}
                         fontWeight="bold"
                         gutterBottom
                         sx={{
-                            mb: 2,
+                            mb: 1.5,
                             background: `linear-gradient(90deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
@@ -922,12 +929,12 @@ export default function Home() {
                         Ready to Get Started?
                     </Typography>
                     <Typography
-                        variant="body1"
+                        variant="body2"
                         color="text.secondary"
                         sx={{
-                            maxWidth: 700,
+                            maxWidth: 600,
                             mx: 'auto',
-                            mb: 4,
+                            mb: 3,
                         }}
                     >
                         Join thousands of professionals and businesses who are
@@ -943,39 +950,39 @@ export default function Home() {
                     >
                         <Button
                             variant="contained"
-                            size="large"
+                            size="medium"
                             sx={{
                                 borderRadius: 2,
                                 textTransform: 'none',
-                                py: 1.5,
-                                px: 4,
+                                py: 1,
+                                px: 3,
                                 fontWeight: 'bold',
-                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                                boxShadow: '0 6px 12px rgba(0,0,0,0.08)',
                             }}
                             component={motion.button}
-                            whileHover={{ scale: 1.05 }}
+                            whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.98 }}
                         >
                             Sign Up Now
                         </Button>
                         <Button
                             variant="outlined"
-                            size="large"
+                            size="medium"
                             sx={{
                                 borderRadius: 2,
                                 textTransform: 'none',
-                                py: 1.5,
-                                px: 4,
+                                py: 1,
+                                px: 3,
                                 fontWeight: 'bold',
-                                borderWidth: 2,
+                                borderWidth: 1.5,
                                 bgcolor: 'background.paper',
                                 '&:hover': {
-                                    borderWidth: 2,
+                                    borderWidth: 1.5,
                                     bgcolor: 'background.paper',
                                 },
                             }}
                             component={motion.button}
-                            whileHover={{ scale: 1.05 }}
+                            whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.98 }}
                         >
                             Contact Sales

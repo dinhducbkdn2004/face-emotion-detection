@@ -157,9 +157,9 @@ const Guest = () => {
                     <Divider sx={{ mb: 3 }} />
 
                     <Alert severity="info" variant="outlined" sx={{ mb: 3 }}>
-                        You are in guest mode. You have {remainingUsage}{' '}
-                        detections left. Login or register to use unlimited and
-                        save your detection history.
+                        You are in guest mode. You have 3 detections left. Login
+                        or register to use unlimited and save your detection
+                        history.
                     </Alert>
 
                     <Paper
