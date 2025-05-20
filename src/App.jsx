@@ -14,6 +14,7 @@ import Settings from './pages/Settings/Settings';
 import History from './pages/History/History';
 import HistoryDetail from './pages/History/HistoryDetail';
 import Guest from './pages/Guest/Guest';
+import NotFound from './pages/NotFound/NotFound';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated } = useUser();
@@ -149,7 +150,7 @@ function App() {
                     />
 
                     {/* Fallback route */}
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="*" element={<NotFound />} />
                 </Routes>
             </Box>
         </Box>
