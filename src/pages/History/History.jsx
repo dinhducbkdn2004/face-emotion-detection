@@ -201,25 +201,29 @@ const History = () => {
 
                 <Divider sx={{ mb: { xs: 2, md: 3 } }} />
 
-                {/* Filter section */}
+                {/* Filter section - Redesigned layout */}
                 <Box
                     sx={{
                         mb: { xs: 2, md: 3 },
                         display: 'flex',
-                        flexDirection: { xs: 'column', md: 'row' },
-                        flexWrap: 'wrap',
-                        gap: { xs: 1, md: 2 },
-                        alignItems: { xs: 'stretch', md: 'center' },
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                        gap: { xs: 2, sm: 2 },
                     }}
                 >
+                    {/* Date pickers section */}
                     <LocalizationProvider
                         dateAdapter={AdapterDateFns}
                         adapterLocale={enUS}
                     >
                         <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
-                            spacing={{ xs: 1, sm: 2 }}
-                            sx={{ flexGrow: 1 }}
+                            direction="row"
+                            spacing={2}
+                            sx={{
+                                flex: { xs: '1', sm: '0.7' },
+                                maxWidth: { sm: '60%', md: '50%' },
+                            }}
                         >
                             <DatePicker
                                 label="From Date"
@@ -264,16 +268,16 @@ const History = () => {
                         </Stack>
                     </LocalizationProvider>
 
-                    <Stack
-                        direction="row"
-                        spacing={1}
+                    {/* Action buttons section */}
+                    <Box
                         sx={{
+                            display: 'flex',
+                            gap: 2,
+                            alignItems: 'center',
                             justifyContent: {
                                 xs: 'space-between',
-                                md: 'center',
+                                sm: 'flex-end',
                             },
-                            mt: { xs: 1, md: 0 },
-                            width: { xs: '100%', md: 'auto' },
                         }}
                     >
                         <Button
@@ -281,15 +285,21 @@ const History = () => {
                             startIcon={<FilterIcon />}
                             onClick={applyDateFilter}
                             size="small"
-                            sx={{ flex: { xs: 1, md: 'none' } }}
                         >
                             Filter
                         </Button>
+
                         <Stack
                             direction="row"
                             spacing={1}
                             sx={{
-                                justifyContent: 'flex-end',
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderRadius: 1,
+                                p: '2px',
+                                bgcolor:
+                                    theme.palette.mode === 'dark'
+                                        ? 'rgba(255,255,255,0.03)'
+                                        : 'rgba(0,0,0,0.02)',
                             }}
                         >
                             <Tooltip title="List view">
@@ -302,7 +312,7 @@ const History = () => {
                                     onClick={() => setViewMode('list')}
                                     size="small"
                                 >
-                                    <ViewListIcon />
+                                    <ViewListIcon fontSize="small" />
                                 </IconButton>
                             </Tooltip>
                             <Tooltip title="Grid view">
@@ -315,11 +325,11 @@ const History = () => {
                                     onClick={() => setViewMode('grid')}
                                     size="small"
                                 >
-                                    <ViewModuleIcon />
+                                    <ViewModuleIcon fontSize="small" />
                                 </IconButton>
                             </Tooltip>
                         </Stack>
-                    </Stack>
+                    </Box>
                 </Box>
 
                 {/* Loading progress */}
@@ -348,30 +358,87 @@ const History = () => {
                         mx: 'auto',
                     }}
                 >
-                    {data?.length === 0 ? (
+                    {data?.length === 0 && !loading ? (
                         <Alert severity="info" sx={{ borderRadius: 2, mt: 2 }}>
                             No results match your filters. Please change filters
                             and try again.
                         </Alert>
                     ) : (
-                        <Fade in={!loading} timeout={800}>
-                            <Grid
-                                container
-                                spacing={isMobile ? 1 : 2}
-                                justifyContent="center"
-                            >
-                                {data?.map((item) => (
-                                    <Grid item key={item.detection_id}>
-                                        <HistoryItem
-                                            item={item}
-                                            onDelete={handleDeleteConfirmation}
-                                            onView={handleViewDetail}
-                                            viewMode={viewMode}
-                                        />
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        </Fade>
+                        <Grid
+                            container
+                            spacing={isMobile ? 1 : 2}
+                            justifyContent={
+                                viewMode === 'list' ? 'space-between' : 'center'
+                            }
+                            sx={{
+                                '& .MuiGrid-item': {
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                },
+                            }}
+                        >
+                            {loading
+                                ? // Skeleton loading
+                                  Array.from(new Array(limit)).map(
+                                      (_, index) => (
+                                          <Grid
+                                              item
+                                              key={`skeleton-${index}`}
+                                              xs={12}
+                                              sm={viewMode === 'list' ? 6 : 6}
+                                              md={viewMode === 'list' ? 6 : 4}
+                                              lg={viewMode === 'list' ? 6 : 3}
+                                              sx={{
+                                                  width: '100%',
+                                                  maxWidth:
+                                                      viewMode === 'list'
+                                                          ? '100%'
+                                                          : {
+                                                                xs: '100%',
+                                                                sm: '320px',
+                                                                md: '300px',
+                                                                lg: '280px',
+                                                            },
+                                              }}
+                                          >
+                                              <HistoryItemSkeleton
+                                                  viewMode={viewMode}
+                                              />
+                                          </Grid>
+                                      )
+                                  )
+                                : data?.map((item) => (
+                                      <Grid
+                                          item
+                                          key={item.detection_id}
+                                          xs={12}
+                                          sm={viewMode === 'list' ? 6 : 6}
+                                          md={viewMode === 'list' ? 6 : 4}
+                                          lg={viewMode === 'list' ? 6 : 3}
+                                          sx={{
+                                              width: '100%',
+                                              maxWidth:
+                                                  viewMode === 'list'
+                                                      ? '100%'
+                                                      : {
+                                                            xs: '100%',
+                                                            sm: '320px',
+                                                            md: '300px',
+                                                            lg: '280px',
+                                                        },
+                                          }}
+                                      >
+                                          <HistoryItem
+                                              item={item}
+                                              onDelete={
+                                                  handleDeleteConfirmation
+                                              }
+                                              onView={handleViewDetail}
+                                              viewMode={viewMode}
+                                          />
+                                      </Grid>
+                                  ))}
+                        </Grid>
                     )}
                 </Box>
 

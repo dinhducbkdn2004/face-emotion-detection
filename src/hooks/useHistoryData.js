@@ -36,15 +36,52 @@ const useHistoryData = (options = {}) => {
     // Debounce timer
     const debounceTimer = useRef(null);
 
+    // Tạo key cache dựa trên tất cả các tham số
     const getCacheKey = useCallback(() => {
         const skip = (page - 1) * limit;
-        return `${skip}-${limit}-${fromDate?.toISOString() || ''}-${toDate?.toISOString() || ''}-${keyword}`;
+        return `${skip}-${limit}-${fromDate ? fromDate.getTime() : ''}-${
+            toDate ? toDate.getTime() : ''
+        }-${keyword}`;
     }, [page, limit, fromDate, toDate, keyword]);
 
     const isCacheValid = useCallback((key) => {
         const timestamp = cache.current.timestamp[key];
         return timestamp && Date.now() - timestamp < CACHE_TIME;
     }, []);
+
+    // Kiểm tra xem một record có nằm trong khoảng thời gian đã chọn hay không
+    const isRecordInDateRange = useCallback(
+        (record) => {
+            if (!fromDate && !toDate) return true;
+
+            // Chuyển đổi ngày của record thành đối tượng Date
+            let recordDate;
+            if (record.created_at) {
+                recordDate = new Date(record.created_at);
+            } else if (record.created_date) {
+                recordDate = new Date(record.created_date);
+            } else if (record.timestamp) {
+                recordDate = new Date(record.timestamp);
+            } else if (record.date) {
+                recordDate = new Date(record.date);
+            } else {
+                // Không tìm thấy trường ngày hợp lệ
+                return true; // Vẫn hiển thị bản ghi nếu không có thông tin ngày
+            }
+
+            // Kiểm tra nằm trong khoảng fromDate-toDate
+            if (fromDate && toDate) {
+                return recordDate >= fromDate && recordDate <= toDate;
+            } else if (fromDate) {
+                return recordDate >= fromDate;
+            } else if (toDate) {
+                return recordDate <= toDate;
+            }
+
+            return true;
+        },
+        [fromDate, toDate]
+    );
 
     const fetchData = useCallback(async () => {
         const skip = (page - 1) * limit;
@@ -62,10 +99,26 @@ const useHistoryData = (options = {}) => {
         setError(null);
 
         try {
-            // Giả sử API đã được cập nhật để hỗ trợ các tham số filter
+            // Chuẩn bị tham số fromDate và toDate đúng định dạng
+            let fromDateParam = null;
+            let toDateParam = null;
+
+            if (fromDate) {
+                // Đảm bảo fromDate bắt đầu từ 00:00:00
+                fromDateParam = new Date(fromDate);
+                fromDateParam.setHours(0, 0, 0, 0);
+            }
+
+            if (toDate) {
+                // Đảm bảo toDate kết thúc vào 23:59:59
+                toDateParam = new Date(toDate);
+                toDateParam.setHours(23, 59, 59, 999);
+            }
+
+            // Gọi API với các tham số đã chuẩn hóa
             const response = await getEmotionHistory(skip, limit, {
-                fromDate,
-                toDate,
+                fromDate: fromDateParam,
+                toDate: toDateParam,
                 keyword,
             });
 
@@ -76,6 +129,9 @@ const useHistoryData = (options = {}) => {
             if (Array.isArray(response)) {
                 // Nếu response là mảng, API trả về trực tiếp danh sách bản ghi
                 responseData = response;
+
+                // Lọc kết quả để đảm bảo chỉ hiển thị bản ghi trong khoảng thời gian đã chọn
+                responseData = responseData.filter(isRecordInDateRange);
 
                 // Nếu độ dài mảng bằng limit, giả định còn thêm bản ghi
                 if (responseData.length >= limit) {
@@ -102,16 +158,40 @@ const useHistoryData = (options = {}) => {
                 // Nếu response là object với cấu trúc { data, totalCount }
                 responseData = response.data || response.items || [];
 
+                // Lọc kết quả để đảm bảo chỉ hiển thị bản ghi trong khoảng thời gian đã chọn
+                responseData = responseData.filter(isRecordInDateRange);
+
                 // Nếu có trường totalCount, sử dụng nó
                 if (
                     response.totalCount !== undefined ||
                     response.total_count !== undefined ||
                     response.total !== undefined
                 ) {
-                    count =
+                    // Sử dụng totalCount từ API, nhưng phải điều chỉnh theo số lượng bản ghi thực tế sau khi lọc
+                    const apiTotalCount =
                         response.totalCount ||
                         response.total_count ||
                         response.total;
+
+                    // Nếu số lượng bản ghi sau khi lọc ít hơn số lượng ban đầu, điều chỉnh lại totalCount
+                    if (
+                        responseData.length <
+                        (response.data?.length || response.items?.length || 0)
+                    ) {
+                        // Tính tỷ lệ giữa số lượng bản ghi sau lọc và trước lọc
+                        const filterRatio =
+                            responseData.length /
+                            (response.data?.length ||
+                                response.items?.length ||
+                                1);
+                        // Ước tính tổng số bản ghi sau khi lọc
+                        count = Math.max(
+                            skip + responseData.length,
+                            Math.ceil(apiTotalCount * filterRatio)
+                        );
+                    } else {
+                        count = apiTotalCount;
+                    }
                 } else if (responseData.length >= limit) {
                     // Nếu độ dài bằng limit, giả định còn thêm ít nhất 1 trang nữa
                     count = skip + responseData.length + 1;
@@ -145,7 +225,16 @@ const useHistoryData = (options = {}) => {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, fromDate, toDate, keyword, getCacheKey, isCacheValid]);
+    }, [
+        page,
+        limit,
+        fromDate,
+        toDate,
+        keyword,
+        getCacheKey,
+        isCacheValid,
+        isRecordInDateRange,
+    ]);
 
     const debouncedFetch = useCallback(() => {
         if (debounceTimer.current) {
@@ -184,26 +273,80 @@ const useHistoryData = (options = {}) => {
     }, [invalidateCache, debouncedFetch]);
 
     // Handle filter changes
-    const handlePageChange = useCallback((newPage) => {
-        setPage(newPage);
-        // Không đặt lại fromDate và toDate khi chuyển trang
-    }, []);
+    const handlePageChange = useCallback(
+        (newPage) => {
+            setPage(newPage);
+            // Reset cache khi chuyển trang với filter đang hoạt động
+            if (fromDate || toDate || keyword) {
+                invalidateCache();
+            }
+        },
+        [fromDate, toDate, keyword, invalidateCache]
+    );
 
-    const handleLimitChange = useCallback((newLimit) => {
-        setLimit(newLimit);
-        setPage(1); // Reset về trang đầu tiên khi thay đổi limit
-    }, []);
+    const handleLimitChange = useCallback(
+        (newLimit) => {
+            setLimit(newLimit);
+            setPage(1); // Reset về trang đầu tiên khi thay đổi limit
+            invalidateCache(); // Luôn xóa cache khi thay đổi limit
+        },
+        [invalidateCache]
+    );
 
-    const handleDateFilterChange = useCallback((newFromDate, newToDate) => {
-        setFromDate(newFromDate);
-        setToDate(newToDate);
-        setPage(1); // Reset về trang đầu tiên khi thay đổi filter
-    }, []);
+    const handleDateFilterChange = useCallback(
+        (newFromDate, newToDate) => {
+            // Xử lý trường hợp ngày không hợp lệ
+            if (newFromDate && newToDate) {
+                // Chuyển đổi thành đối tượng Date để so sánh
+                const fromDateObj = new Date(newFromDate);
+                fromDateObj.setHours(0, 0, 0, 0); // Đảm bảo fromDate bắt đầu từ 00:00:00
 
-    const handleKeywordChange = useCallback((newKeyword) => {
-        setKeyword(newKeyword);
-        setPage(1); // Reset về trang đầu tiên khi thay đổi keyword
-    }, []);
+                const toDateObj = new Date(newToDate);
+                toDateObj.setHours(23, 59, 59, 999); // Đảm bảo toDate kết thúc vào 23:59:59.999
+
+                // Đảm bảo toDate không sớm hơn fromDate
+                if (fromDateObj > toDateObj) {
+                    // Nếu fromDate > toDate, đặt toDate = fromDate + 23:59:59
+                    const adjustedToDate = new Date(fromDateObj);
+                    adjustedToDate.setHours(23, 59, 59, 999);
+                    setFromDate(fromDateObj);
+                    setToDate(adjustedToDate);
+                } else {
+                    setFromDate(fromDateObj);
+                    setToDate(toDateObj);
+                }
+            } else if (newFromDate) {
+                // Chỉ có fromDate
+                const fromDateObj = new Date(newFromDate);
+                fromDateObj.setHours(0, 0, 0, 0);
+                setFromDate(fromDateObj);
+                setToDate(newToDate);
+            } else if (newToDate) {
+                // Chỉ có toDate
+                const toDateObj = new Date(newToDate);
+                toDateObj.setHours(23, 59, 59, 999);
+                setFromDate(newFromDate);
+                setToDate(toDateObj);
+            } else {
+                // Cả hai đều null
+                setFromDate(null);
+                setToDate(null);
+            }
+
+            setPage(1); // Reset về trang đầu tiên khi thay đổi filter
+            invalidateCache(); // Xóa cache khi thay đổi filter ngày
+        },
+        [invalidateCache]
+    );
+
+    const handleKeywordChange = useCallback(
+        (newKeyword) => {
+            setKeyword(newKeyword);
+            setPage(1); // Reset về trang đầu tiên khi thay đổi keyword
+            invalidateCache(); // Xóa cache khi thay đổi keyword
+        },
+        [invalidateCache]
+    );
 
     return {
         data,

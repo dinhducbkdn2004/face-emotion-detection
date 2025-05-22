@@ -331,8 +331,8 @@ const EmotionDetector = () => {
             >
                 <DialogTitle>
                     {isCapturing
-                        ? 'Chụp ảnh từ webcam'
-                        : 'Xem trước ảnh đã chụp'}
+                        ? 'Capture Image from Webcam'
+                        : 'Preview Image'}
                     <IconButton
                         aria-label="close"
                         onClick={handleCloseCamera}

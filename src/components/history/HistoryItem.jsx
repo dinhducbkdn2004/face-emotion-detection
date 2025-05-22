@@ -55,13 +55,18 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                 borderColor: 'divider',
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                    boxShadow: `0 4px 20px 0 ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.15)'}`,
+                    boxShadow: `0 4px 20px 0 ${
+                        theme.palette.mode === 'dark'
+                            ? 'rgba(0,0,0,0.3)'
+                            : 'rgba(0,0,0,0.15)'
+                    }`,
                     borderColor: emotionColor,
                     transform: 'translateY(-2px)',
                 },
                 userSelect: 'none',
                 cursor: 'default',
-                maxWidth: isMobile ? '100%' : 'auto',
+                maxWidth:
+                    viewMode === 'list' ? '100%' : isMobile ? '100%' : '320px',
             }}
         >
             {/* Image Container */}
@@ -80,8 +85,8 @@ const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
                                 ? '120px'
                                 : '200px'
                             : isMobile
-                              ? '160px'
-                              : '200px',
+                            ? '160px'
+                            : '200px',
                     bgcolor: 'black',
                     flexShrink: 0,
                 }}

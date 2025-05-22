@@ -113,7 +113,9 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
             // Xử lý lỗi HTTP
             const errorText = await response.text();
             throw new Error(
-                `HTTP Error ${response.status}: ${errorText || response.statusText}`
+                `HTTP Error ${response.status}: ${
+                    errorText || response.statusText
+                }`
             );
         }
 
@@ -269,21 +271,33 @@ export const getEmotionHistory = async (skip = 0, limit = 10, filters = {}) => {
 
         // Thêm các tham số lọc vào URL
         const { fromDate, toDate, keyword } = filters;
+
+        // Xử lý định dạng ngày cho phù hợp với API
         if (fromDate) {
-            url += `&from_date=${fromDate.toISOString()}`;
+            // Đảm bảo gửi đúng định dạng ISO với thời gian 00:00:00
+            const fromDateStr =
+                fromDate instanceof Date
+                    ? fromDate.toISOString()
+                    : new Date(fromDate).toISOString();
+            url += `&from_date=${fromDateStr}`;
         }
+
         if (toDate) {
-            url += `&to_date=${toDate.toISOString()}`;
+            // Đảm bảo gửi đúng định dạng ISO với thời gian 23:59:59.999
+            const toDateStr =
+                toDate instanceof Date
+                    ? toDate.toISOString()
+                    : new Date(toDate).toISOString();
+            url += `&to_date=${toDateStr}`;
         }
+
         if (keyword) {
             url += `&keyword=${encodeURIComponent(keyword)}`;
         }
 
-        const response = await apiClient.get(url);
+        console.log('API request URL:', url); // Log URL để debug
 
-        // Cấu trúc phản hồi API có thể là:
-        // 1. { data: [...items], totalCount: number }
-        // 2. [...items] (với metadata trong header hoặc item đầu tiên)
+        const response = await apiClient.get(url);
 
         return response.data;
     } catch (error) {

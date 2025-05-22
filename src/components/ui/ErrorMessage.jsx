@@ -91,7 +91,7 @@ const ErrorMessage = ({
                         onClick={onRetry}
                         sx={{ mt: 1 }}
                     >
-                        Thử lại
+                        Try again
                     </Button>
                 )}
             </Box>
