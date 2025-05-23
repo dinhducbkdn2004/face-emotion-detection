@@ -42,7 +42,6 @@ import { format } from 'date-fns';
 import useApi from '../../hooks/useApi';
 import { getEmotionDetectionById } from '../../services/emotionService';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import FaceBoxOverlay from '../emotion/FaceBoxOverlay';
 
 const emotionColors = {
     happy: '#4caf50',
@@ -108,7 +107,6 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
     useEffect(() => {
         // Không cuộn tự động khi highlight thay đổi
     }, [highlightedFace]);
-
 
     // Handle delete confirmation
     const handleDeleteClick = () => {
@@ -226,37 +224,34 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
         </Grid>
     );
 
-    // Render image with face boxes
-    const renderImageWithFaces = () => {
-        if (!detailData?.image_url || !detailData?.detection_results?.faces) {
+    // Render image without face boxes
+    const renderImage = () => {
+        if (!detailData?.image_url) {
             return (
                 <Box
                     sx={{
-                        flex: { xs: 'none', md: 1 },
-                        maxWidth: { xs: '100%', md: '50%' },
+                        flex: 1,
+                        width: '100%',
                         position: 'relative',
                         borderRadius: 3,
                         overflow: 'hidden',
                         border: '1px solid',
                         borderColor: 'divider',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                        height: { xs: 250, sm: 300, md: 350 },
+                        height: { xs: 250, sm: 300, md: 400 },
                         display: 'flex',
                         justifyContent: 'center',
                         alignItems: 'center',
                         bgcolor: 'black',
                     }}
-                    ref={containerRef}
                 >
                     <Box
                         component="img"
-                        ref={imageRef}
-                        src={detailData.image_url}
+                        src={detailData?.image_url}
                         alt="Detection result"
                         sx={{
-
-                            maxWidth: '100%',
-                            maxHeight: '100%',
+                            width: '100%',
+                            height: '100%',
                             objectFit: 'contain',
                             display: 'block',
                         }}
@@ -265,23 +260,29 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
             );
         }
 
-        const faces = detailData.detection_results.faces;
-
         return (
             <Box
                 sx={{
-                    flex: { xs: 'none', md: 1 },
-                    maxWidth: { xs: '100%', md: '50%' },
+                    flex: 1,
+                    width: '100%',
                     position: 'relative',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    height: { xs: 250, sm: 300, md: 400 },
                 }}
             >
-                {/* Using FaceBoxOverlay component for accurate face box rendering */}
-                <FaceBoxOverlay
-                    imageUrl={detailData.image_url}
-                    faces={faces}
-                    onFaceClick={(index) => {
-                        handleFaceClick(index);
-                        handleScrollToFace(index);
+                <Box
+                    component="img"
+                    src={detailData.image_url}
+                    alt="Detection result"
+                    sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        display: 'block',
                     }}
                 />
             </Box>
@@ -625,17 +626,21 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                 overflow: 'visible',
                                 display: 'flex',
                                 flexDirection: 'column',
+                                width: '100%',
                             }}
                         >
                             <Box
                                 sx={{
                                     display: 'flex',
-                                    flexDirection: { xs: 'column', md: 'row' },
+                                    flexDirection: {xs: 'column', md: 'row'},
                                     gap: { xs: 2, md: 3 },
                                     mb: { xs: 2, md: 3 },
+                                    width: '100%',
                                 }}
                             >
-                                {renderImageWithFaces()}
+                                <Box sx={{ width: '100%' }}>
+                                    {renderImage()}
+                                </Box>
 
                                 {/* Info */}
                                 <Box sx={{ flex: 1 }}>
