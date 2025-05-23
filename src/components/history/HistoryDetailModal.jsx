@@ -42,6 +42,7 @@ import { format } from 'date-fns';
 import useApi from '../../hooks/useApi';
 import { getEmotionDetectionById } from '../../services/emotionService';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import FaceBoxOverlay from '../emotion/FaceBoxOverlay';
 
 const emotionColors = {
     happy: '#4caf50',
@@ -85,17 +86,9 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
     // Ref for results container - để quản lý scroll
     const resultsContainerRef = useRef(null);
 
-    // Refs và states cho việc tính toán bounding box
+    // Ref for rendering image with face boxes when detail data is unavailable
     const imageRef = useRef(null);
     const containerRef = useRef(null);
-    const [imageDimensions, setImageDimensions] = useState({
-        width: 0,
-        height: 0,
-    });
-    const [containerDimensions, setContainerDimensions] = useState({
-        width: 0,
-        height: 0,
-    });
 
     // Use API hook to fetch detailed data
     const [fetchDetail, detailData, loading, error] = useApi(
@@ -116,49 +109,6 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
         // Không cuộn tự động khi highlight thay đổi
     }, [highlightedFace]);
 
-    // Cập nhật kích thước ảnh và container khi ảnh được tải hoặc kích thước thay đổi
-    useEffect(() => {
-        if (!detailData?.image_url) return;
-
-        const updateDimensions = () => {
-            if (imageRef.current && containerRef.current) {
-                // Chờ một chút để đảm bảo ảnh đã được render hoàn toàn
-                setTimeout(() => {
-                    // Kích thước thực tế của ảnh đã được render
-                    setImageDimensions({
-                        width: imageRef.current.offsetWidth,
-                        height: imageRef.current.offsetHeight,
-                    });
-
-                    // Kích thước của container
-                    setContainerDimensions({
-                        width: containerRef.current.offsetWidth,
-                        height: containerRef.current.offsetHeight,
-                    });
-                }, 100);
-            }
-        };
-
-        // Tạo một Image object mới để lấy kích thước thực
-        const img = new Image();
-        img.onload = updateDimensions;
-        img.src = detailData.image_url;
-
-        // Cập nhật kích thước khi ảnh được tải
-        if (imageRef.current) {
-            imageRef.current.onload = updateDimensions;
-        }
-
-        // Cập nhật ngay lập tức nếu ảnh đã được tải
-        updateDimensions();
-
-        // Thêm listener cho sự kiện resize
-        window.addEventListener('resize', updateDimensions);
-
-        return () => {
-            window.removeEventListener('resize', updateDimensions);
-        };
-    }, [detailData?.image_url]);
 
     // Handle delete confirmation
     const handleDeleteClick = () => {
@@ -185,7 +135,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
         }));
     };
 
-    // Highlight face on hover
+    // Highlight face on hover - updated to work with FaceBoxOverlay
     const handleFaceHover = (faceIndex) => {
         setHighlightedFace(faceIndex);
     };
@@ -296,73 +246,7 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                         alignItems: 'center',
                         bgcolor: 'black',
                     }}
-                >
-                    {detailData?.image_url ? (
-                        <Box
-                            component="img"
-                            src={detailData.image_url}
-                            alt="Detection result"
-                            sx={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                            }}
-                        />
-                    ) : (
-                        <ImageNotSupported
-                            sx={{
-                                fontSize: 60,
-                                color: 'text.secondary',
-                                opacity: 0.5,
-                            }}
-                        />
-                    )}
-                </Box>
-            );
-        }
-
-        const faces = detailData.detection_results.faces;
-
-        // Tính toán tỷ lệ thu phóng
-        const calculateScale = () => {
-            if (imageDimensions.width === 0 || containerDimensions.width === 0)
-                return 1;
-
-            // Tỷ lệ dựa trên chiều rộng và chiều cao
-            const scaleX = imageDimensions.width / containerDimensions.width;
-            const scaleY = imageDimensions.height / containerDimensions.height;
-
-            return Math.min(scaleX, scaleY);
-        };
-
-        return (
-            <Box
-                sx={{
-                    flex: { xs: 'none', md: 1 },
-                    maxWidth: { xs: '100%', md: '50%' },
-                    position: 'relative',
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    height: { xs: 250, sm: 300, md: 350 },
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    bgcolor: 'black',
-                }}
-                ref={containerRef}
-            >
-                <Box
-                    sx={{
-                        position: 'relative',
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
+                    ref={containerRef}
                 >
                     <Box
                         component="img"
@@ -370,164 +254,36 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                         src={detailData.image_url}
                         alt="Detection result"
                         sx={{
+
                             maxWidth: '100%',
                             maxHeight: '100%',
-                            objectFit: 'cover',
+                            objectFit: 'contain',
+                            display: 'block',
                         }}
                     />
-
-                    {/* Face bounding boxes */}
-                    {imageDimensions.width > 0 &&
-                        faces.map((face, index) => {
-                            // Extract box coordinates and calculate dimensions
-                            const [x, y, width, height] = face.box;
-                            // Determine primary emotion color
-                            const primaryEmotion = face.emotions[0];
-                            const boxColor = '#2196f3'; // Màu xanh dương đồng nhất như trong hình
-
-                            // Tính toán vị trí dựa trên tỷ lệ thực tế của ảnh
-                            const imageWidth = imageDimensions.width;
-                            const imageHeight = imageDimensions.height;
-
-                            // Tính offset từ cạnh container đến cạnh ảnh
-                            const offsetLeft =
-                                (containerDimensions.width - imageWidth) / 2;
-                            const offsetTop =
-                                (containerDimensions.height - imageHeight) / 2;
-
-                            // Lấy kích thước thực tế của ảnh gốc với kiểm tra null
-                            let originalWidth = 640; // Giá trị mặc định
-                            let originalHeight = 480; // Giá trị mặc định
-
-                            if (
-                                imageRef.current &&
-                                imageRef.current.naturalWidth &&
-                                imageRef.current.naturalHeight
-                            ) {
-                                originalWidth = imageRef.current.naturalWidth;
-                                originalHeight = imageRef.current.naturalHeight;
-                            }
-
-                            // Tính toán tỉ lệ scale
-                            const scaleX = imageWidth / originalWidth;
-                            const scaleY = imageHeight / originalHeight;
-
-                            // Áp dụng phép biến đổi tọa độ
-                            // Đảm bảo box không vượt ra ngoài kích thước ảnh
-                            const boxLeft = Math.max(
-                                0,
-                                Math.min(
-                                    offsetLeft + x * scaleX,
-                                    offsetLeft + imageWidth
-                                )
-                            );
-                            const boxTop = Math.max(
-                                0,
-                                Math.min(
-                                    offsetTop + y * scaleY,
-                                    offsetTop + imageHeight
-                                )
-                            );
-                            const boxWidth = Math.min(
-                                width * scaleX,
-                                imageWidth - (boxLeft - offsetLeft)
-                            );
-                            const boxHeight = Math.min(
-                                height * scaleY,
-                                imageHeight - (boxTop - offsetTop)
-                            );
-
-                            return (
-                                <Box
-                                    key={index}
-                                    sx={{
-                                        position: 'absolute',
-                                        left: `${boxLeft}px`,
-                                        top: `${boxTop}px`,
-                                        width: `${boxWidth}px`,
-                                        height: `${boxHeight}px`,
-                                        border: `2px solid ${boxColor}`,
-                                        borderRadius: '4px',
-                                        transition: 'all 0.3s ease',
-                                        cursor: 'pointer',
-                                        zIndex:
-                                            highlightedFace === index ? 10 : 1,
-                                        '&:hover': {
-                                            boxShadow: `0 0 0 2px ${boxColor}, 0 0 10px ${boxColor}`,
-                                        },
-                                    }}
-                                    onClick={() => {
-                                        handleFaceClick(index);
-                                        handleScrollToFace(index);
-                                    }}
-                                    onMouseEnter={() => handleFaceHover(index)}
-                                    onMouseLeave={handleFaceLeave}
-                                >
-                                    {/* Số thứ tự trên góc bounding box */}
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            top: `${boxTop > 16 ? -14 : 2}px`,
-                                            left: `${boxLeft > 16 ? 2 : boxWidth > 30 ? 2 : 0}px`,
-                                            minWidth: '24px',
-                                            height: '24px',
-                                            backgroundColor: boxColor,
-                                            color: '#fff',
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '12px',
-                                            fontWeight: 'bold',
-                                            boxShadow:
-                                                '0 2px 5px rgba(0,0,0,0.2)',
-                                            zIndex: 2,
-                                        }}
-                                    >
-                                        {index + 1}
-                                    </Box>
-
-                                    {/* Thông tin cảm xúc chỉ hiện khi hover hoặc selected */}
-                                    {highlightedFace === index && (
-                                        <Fade in={highlightedFace === index}>
-                                            <Box
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: `${boxHeight + 5}px`,
-                                                    left: 0,
-                                                    backgroundColor:
-                                                        'rgba(0,0,0,0.75)',
-                                                    color: '#fff',
-                                                    padding: '4px 8px',
-                                                    borderRadius: '4px',
-                                                    fontSize: '12px',
-                                                    zIndex: 2,
-                                                    whiteSpace: 'nowrap',
-                                                    boxShadow:
-                                                        '0 2px 5px rgba(0,0,0,0.2)',
-                                                    maxWidth: '160px',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                }}
-                                            >
-                                                {primaryEmotion.emotion
-                                                    .charAt(0)
-                                                    .toUpperCase() +
-                                                    primaryEmotion.emotion.slice(
-                                                        1
-                                                    )}
-                                                :{' '}
-                                                {primaryEmotion.percentage.toFixed(
-                                                    1
-                                                )}
-                                                %
-                                            </Box>
-                                        </Fade>
-                                    )}
-                                </Box>
-                            );
-                        })}
                 </Box>
+            );
+        }
+
+        const faces = detailData.detection_results.faces;
+
+        return (
+            <Box
+                sx={{
+                    flex: { xs: 'none', md: 1 },
+                    maxWidth: { xs: '100%', md: '50%' },
+                    position: 'relative',
+                }}
+            >
+                {/* Using FaceBoxOverlay component for accurate face box rendering */}
+                <FaceBoxOverlay
+                    imageUrl={detailData.image_url}
+                    faces={faces}
+                    onFaceClick={(index) => {
+                        handleFaceClick(index);
+                        handleScrollToFace(index);
+                    }}
+                />
             </Box>
         );
     };
@@ -589,8 +345,8 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                                 ? 'rgba(255,255,255,0.1)'
                                                 : 'rgba(0,0,0,0.05)'
                                             : theme.palette.mode === 'dark'
-                                              ? 'rgba(255,255,255,0.05)'
-                                              : 'rgba(0,0,0,0.02)',
+                                            ? 'rgba(255,255,255,0.05)'
+                                            : 'rgba(0,0,0,0.02)',
                                     borderLeft: `4px solid ${primaryEmotionColor}`,
                                     transition: 'all 0.2s ease',
                                     '&:hover': {
@@ -1015,8 +771,8 @@ const HistoryDetailModal = ({ open, onClose, item, onDelete }) => {
                                         isMobile
                                             ? 'subtitle1'
                                             : isTablet
-                                              ? 'h6'
-                                              : 'h5'
+                                            ? 'h6'
+                                            : 'h5'
                                     }
                                     fontWeight="bold"
                                     sx={{

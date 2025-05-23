@@ -295,7 +295,6 @@ export const getEmotionHistory = async (skip = 0, limit = 10, filters = {}) => {
             url += `&keyword=${encodeURIComponent(keyword)}`;
         }
 
-        console.log('API request URL:', url); // Log URL để debug
 
         const response = await apiClient.get(url);
 

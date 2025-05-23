@@ -33,14 +33,33 @@ const emotionColors = {
     contempt: '#795548',
 };
 
+// Hàm tính toán main emotion từ mảng emotions
+const calculateMainEmotion = (faces) => {
+    if (!faces || faces.length === 0) return 'neutral';
+
+    // Lấy emotions của khuôn mặt đầu tiên
+    const emotions = faces[0].emotions;
+    if (!emotions || emotions.length === 0) return 'neutral';
+
+    // Tìm emotion có percentage cao nhất
+    const mainEmotion = emotions.reduce((prev, current) => {
+        return prev.percentage > current.percentage ? prev : current;
+    });
+
+    return mainEmotion.emotion;
+};
+
 const HistoryItem = ({ item, onDelete, onView, viewMode = 'grid' }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-    const mainEmotion = item.main_emotion?.toLowerCase() || 'neutral';
+    // Tính toán main emotion từ detection_results
+    const mainEmotion =
+        calculateMainEmotion(item?.detection_results?.faces)?.toLowerCase() ||
+        'neutral';
     const emotionColor =
         emotionColors[mainEmotion] || theme.palette.primary.main;
-    const faceCount = item.face_count || 1;
+    const faceCount = item?.detection_results?.faces?.length || 0;
 
     return (
         <Card
