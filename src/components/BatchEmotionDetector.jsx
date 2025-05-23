@@ -438,6 +438,33 @@ const BatchEmotionDetector = () => {
         await startCamera();
     };
 
+    // Sử dụng ảnh đã chụp và tiếp tục chụp ảnh mới
+    const handleUsePhotoAndContinue = () => {
+        if (capturedImage) {
+            // Chuyển đổi dataURL thành Blob
+            fetch(capturedImage)
+                .then((res) => res.blob())
+                .then((blob) => {
+                    // Tạo file từ blob
+                    const fileName = `webcam-capture-${new Date().getTime()}.jpg`;
+                    const file = new File([blob], fileName, {
+                        type: 'image/jpeg',
+                    });
+
+                    // Thêm file vào danh sách đã chọn
+                    handleFiles([file]);
+
+                    // Reset để chụp ảnh tiếp
+                    if (capturedImage) {
+                        URL.revokeObjectURL(capturedImage);
+                        setCapturedImage(null);
+                    }
+                    setIsCapturing(true);
+                    startCamera();
+                });
+        }
+    };
+
     // Sử dụng ảnh đã chụp để thêm vào danh sách
     const handleUsePhoto = () => {
         if (capturedImage) {
@@ -1024,6 +1051,14 @@ const BatchEmotionDetector = () => {
                                 startIcon={<CheckCircle />}
                             >
                                 Use this image
+                            </Button>
+                            <Button
+                                onClick={handleUsePhotoAndContinue}
+                                color="primary"
+                                variant="contained"
+                                startIcon={<AddPhotoAlternateOutlined />}
+                            >
+                                Next photo
                             </Button>
                         </>
                     )}

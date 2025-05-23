@@ -242,15 +242,6 @@ const EmotionDetector = () => {
                 }}
                 onSubmit={handleSubmit}
             >
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6" fontWeight="medium" gutterBottom>
-                        Emotion Detection
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Upload an image containing a face to detect emotions.
-                        Supports JPG, PNG and JPEG formats, maximum size 5MB.
-                    </Typography>
-                </Box>
 
                 <FileUploader
                     onFileSelect={handleFileChange}

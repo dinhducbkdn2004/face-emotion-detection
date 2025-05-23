@@ -71,7 +71,7 @@ const teamMembers = [
         role: 'Backend Developer',
         avatar: '/avatar_ldb.webp',
         description:
-            'Using Node.js, Express, and MongoDB to create a backend server.',
+            'Using Python, FastAPI, and SocketIO to create a backend server.',
         socialLinks: [
             { icon: 'GitHub', url: 'https://github.com/' },
             { icon: 'LinkedIn', url: 'https://linkedin.com/' },

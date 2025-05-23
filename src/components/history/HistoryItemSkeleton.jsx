@@ -49,9 +49,9 @@ const HistoryItemSkeleton = ({ viewMode = 'grid' }) => {
                     flexShrink: 0,
                 }}
             >
-                <Skeleton
-                    variant="rectangular"
-                    width="100%"
+            <Skeleton
+                variant="rectangular"
+                width="100%"
                     height="100%"
                     animation="wave"
                     sx={{

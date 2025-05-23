@@ -78,7 +78,9 @@ const FileUploader = ({
             const validFiles = files.filter((file) => {
                 if (file.size > maxSize) {
                     console.warn(
-                        `File "${file.name}" vượt quá kích thước cho phép (${maxSize / 1024 / 1024}MB)`
+                        `File "${file.name}" vượt quá kích thước cho phép (${
+                            maxSize / 1024 / 1024
+                        }MB)`
                     );
                     return false;
                 }
@@ -108,7 +110,9 @@ const FileUploader = ({
             // Kiểm tra kích thước file
             if (file.size > maxSize) {
                 alert(
-                    `Kích thước file không được vượt quá ${maxSize / 1024 / 1024}MB`
+                    `Kích thước file không được vượt quá ${
+                        maxSize / 1024 / 1024
+                    }MB`
                 );
                 return;
             }
@@ -224,14 +228,7 @@ const FileUploader = ({
                             component="div"
                             color="text.secondary"
                         >
-                            Drag and drop file here
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{ mb: 1 }}
-                        >
-                            Or click to select file
+                            Drag and drop images here
                         </Typography>
                         <Button
                             variant="contained"
@@ -242,8 +239,15 @@ const FileUploader = ({
                             }}
                             startIcon={<CloudUpload />}
                         >
-                            Select file
+                            Select Images
                         </Button>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 2 }}
+                        >
+                            Supported formats: JPG, PNG, JPEG. Max size: 5MB
+                        </Typography>
                     </Stack>
                 </Paper>
             )}
