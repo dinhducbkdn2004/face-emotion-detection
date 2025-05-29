@@ -15,13 +15,13 @@ export default defineConfig({
         open: true,
         proxy: {
             '/api': {
-                target: 'https://emd.ducbkdn.space',
+                target: 'https://emdbe.ducbkdn.space',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path,
             },
             '/auth': {
-                target: 'https://emd.ducbkdn.space',
+                target: 'https://emdbe.ducbkdn.space',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path,

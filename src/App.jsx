@@ -38,7 +38,7 @@ const PublicOnlyRoute = ({ children }) => {
 
 function App() {
     useEffect(() => {
-        fetch('https://emd.ducbkdn.space/auth/profile', {
+        fetch('https://emdbe.ducbkdn.space/auth/profile', {
             method: 'GET',
             credentials: 'include',
         });
