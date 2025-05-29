@@ -42,7 +42,7 @@ export const initializeSocket = async () => {
 
         // Cấu hình kết nối - sử dụng URL đơn giản hơn
         const baseURL =
-            import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn';
+            import.meta.env.VITE_API_BASE_URL || 'https://emd.ducbkdn.space';
         // Thêm namespace theo đúng giao thức
         const socketURL = baseURL + '/emotion-detection';
 

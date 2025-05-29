@@ -38,7 +38,7 @@ const PublicOnlyRoute = ({ children }) => {
 
 function App() {
     useEffect(() => {
-        fetch('https://ped.ldblckrs.id.vn/auth/profile', {
+        fetch('https://emd.ducbkdn.space/auth/profile', {
             method: 'GET',
             credentials: 'include',
         });

@@ -10,7 +10,7 @@ const apiClient = axios.create({
     // Trong môi trường development, sử dụng URL tương đối để đi qua proxy
     baseURL: isDevelopment
         ? ''
-        : import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn',
+        : import.meta.env.VITE_API_BASE_URL || 'https://emd.ducbkdn.space',
     timeout: 60000, // Tăng timeout lên 60 giây
     headers: {
         'Content-Type': 'application/json',

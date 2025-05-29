@@ -99,7 +99,7 @@ export const detectEmotionBatch = async (imageFiles, onProgress) => {
         // Trong môi trường development, sử dụng URL tương đối để đi qua proxy
         const baseUrl = isDevelopment
             ? ''
-            : import.meta.env.VITE_API_BASE_URL || 'https://ped.ldblckrs.id.vn';
+            : import.meta.env.VITE_API_BASE_URL || 'https://emd.ducbkdn.space';
         const url = `${baseUrl}/api/detect/batch`;
 
         // Sử dụng fetch API để xử lý SSE
