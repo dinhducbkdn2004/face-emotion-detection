@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
     TextField,
     Button,
@@ -26,11 +26,13 @@ const modalStyle = {
 };
 
 const ForgotPassword = () => {
+    const [open, setOpen] = useState(true);
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,12 +57,20 @@ const ForgotPassword = () => {
     };
 
     const handleClose = () => {
-        navigate(-1);
+        setOpen(false);
+        const returnPath = typeof location.state?.from === 'string' ? location.state.from : location.state?.from?.pathname;
+        if (returnPath && !['/login', '/register', '/forgot-password'].includes(returnPath)) {
+            navigate(returnPath, { replace: true });
+        } else if (location.key !== 'default') {
+            navigate(-1);
+        } else {
+            navigate('/', { replace: true });
+        }
     };
 
     return (
         <Modal
-            open={true}
+            open={open}
             onClose={handleClose}
             aria-labelledby="forgot-password-modal"
         >
@@ -78,7 +88,10 @@ const ForgotPassword = () => {
                         Forgot Password
                     </Typography>
                     <IconButton
-                        onClick={handleClose}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleClose();
+                        }}
                         size="small"
                         sx={{ color: 'text.secondary' }}
                     >
@@ -132,6 +145,8 @@ const ForgotPassword = () => {
                         <Button
                             component={Link}
                             to="/login"
+                            replace
+                            state={{ from: location.state?.from }}
                             variant="contained"
                             fullWidth
                             sx={{ py: 1 }}
@@ -171,6 +186,8 @@ const ForgotPassword = () => {
                         <Box sx={{ textAlign: 'center' }}>
                             <Link
                                 to="/login"
+                                replace
+                                state={{ from: location.state?.from }}
                                 style={{ textDecoration: 'none' }}
                             >
                                 <Typography

@@ -276,6 +276,7 @@ const Navbar = () => {
                                 <Button
                                     component={Link}
                                     to="/login"
+                                    state={{ from: location.pathname }}
                                     color="primary"
                                     variant="text"
                                     startIcon={<LoginIcon />}
@@ -292,6 +293,7 @@ const Navbar = () => {
                                 <Button
                                     component={Link}
                                     to="/register"
+                                    state={{ from: location.pathname }}
                                     color="primary"
                                     variant="text"
                                     startIcon={<RegisterIcon />}
@@ -394,6 +396,7 @@ const Navbar = () => {
                             <ListItemButton
                                 component={Link}
                                 to={item.path}
+                                state={{ from: location.pathname }}
                                 onClick={item.onClick}
                                 sx={{
                                     py: 1,

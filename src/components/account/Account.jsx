@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from './UserContext';
 import {
     Avatar,
@@ -26,6 +26,7 @@ import {
 const Account = () => {
     const { user, isAuthenticated, signOut } = useUser();
     const navigate = useNavigate();
+    const location = useLocation();
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
 
@@ -52,7 +53,7 @@ const Account = () => {
                 <Tooltip title="Login">
                     <IconButton
                         color="primary"
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/login', { state: { from: location.pathname } })}
                         sx={{
                             display: { xs: 'flex', sm: 'none' },
                             bgcolor: 'transparent',
@@ -68,7 +69,7 @@ const Account = () => {
                         variant="text"
                         color="primary"
                         startIcon={<LoginIcon />}
-                        onClick={() => navigate('/login')}
+                        onClick={() => navigate('/login', { state: { from: location.pathname } })}
                         sx={{
                             borderRadius: 2,
                             textTransform: 'none',
@@ -81,7 +82,7 @@ const Account = () => {
                         variant="contained"
                         color="primary"
                         startIcon={<RegisterIcon />}
-                        onClick={() => navigate('/register')}
+                        onClick={() => navigate('/register', { state: { from: location.pathname } })}
                         sx={{
                             borderRadius: 2,
                             textTransform: 'none',

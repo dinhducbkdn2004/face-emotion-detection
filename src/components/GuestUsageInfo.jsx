@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Alert, LinearProgress, Button } from '@mui/material';
 import { Person, Login } from '@mui/icons-material';
 import { getUserUsage } from '../services/authService';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 
 /**
  * Component hiển thị thông tin số lần sử dụng của người dùng khách
  */
 export default function GuestUsageInfo() {
+    const location = useLocation();
     const [usageInfo, setUsageInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -105,6 +106,7 @@ export default function GuestUsageInfo() {
                 <Button
                     component={RouterLink}
                     to="/login"
+                    state={{ from: location.pathname }}
                     variant="contained"
                     color="secondary"
                     startIcon={<Login />}
@@ -115,6 +117,7 @@ export default function GuestUsageInfo() {
                 <Button
                     component={RouterLink}
                     to="/register"
+                    state={{ from: location.pathname }}
                     variant="outlined"
                     color="secondary"
                     size="small"

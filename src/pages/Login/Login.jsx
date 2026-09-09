@@ -42,6 +42,8 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [formErrors, setFormErrors] = useState({});
 
+    const [open, setOpen] = useState(true);
+
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
@@ -49,7 +51,7 @@ const Login = () => {
         (state) => state.auth
     );
 
-    const from = location.state?.from?.pathname || '/dashboard';
+    const from = location.state?.from?.pathname || location.state?.from || '/dashboard';
 
     // ... existing useEffects and handlers ...
     useEffect(() => {
@@ -122,11 +124,19 @@ const Login = () => {
     };
 
     const handleClose = () => {
-        navigate(-1);
+        setOpen(false);
+        const returnPath = typeof location.state?.from === 'string' ? location.state.from : location.state?.from?.pathname;
+        if (returnPath && !['/login', '/register', '/forgot-password'].includes(returnPath)) {
+            navigate(returnPath, { replace: true });
+        } else if (location.key !== 'default') {
+            navigate(-1);
+        } else {
+            navigate('/', { replace: true });
+        }
     };
 
     return (
-        <Modal open={true} onClose={handleClose} aria-labelledby="login-modal">
+        <Modal open={open} onClose={handleClose} aria-labelledby="login-modal">
             <Box sx={modalStyle}>
                 {/* Header */}
                 <Box
@@ -141,7 +151,10 @@ const Login = () => {
                         Login
                     </Typography>
                     <IconButton
-                        onClick={handleClose}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleClose();
+                        }}
                         size="small"
                         sx={{ color: 'text.secondary' }}
                     >
@@ -219,6 +232,8 @@ const Login = () => {
                         />
                         <Link
                             to="/forgot-password"
+                            replace
+                            state={{ from: location.state?.from }}
                             style={{ textDecoration: 'none' }}
                         >
                             <Typography
@@ -274,7 +289,12 @@ const Login = () => {
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                         Don't have an account?{' '}
-                        <Link to="/register" style={{ textDecoration: 'none' }}>
+                        <Link
+                            to="/register"
+                            replace
+                            state={{ from: location.state?.from }}
+                            style={{ textDecoration: 'none' }}
+                        >
                             <Typography
                                 component="span"
                                 variant="body2"

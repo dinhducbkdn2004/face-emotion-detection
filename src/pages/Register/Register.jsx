@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
     TextField,
@@ -33,6 +33,7 @@ const modalStyle = {
 };
 
 const Register = () => {
+    const [open, setOpen] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,6 +41,7 @@ const Register = () => {
     const [termsAccepted, setTermsAccepted] = useState(false);
 
     const navigate = useNavigate();
+    const location = useLocation();
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.auth);
 
@@ -94,12 +96,20 @@ const Register = () => {
     };
 
     const handleClose = () => {
-        navigate(-1);
+        setOpen(false);
+        const returnPath = typeof location.state?.from === 'string' ? location.state.from : location.state?.from?.pathname;
+        if (returnPath && !['/login', '/register', '/forgot-password'].includes(returnPath)) {
+            navigate(returnPath, { replace: true });
+        } else if (location.key !== 'default') {
+            navigate(-1);
+        } else {
+            navigate('/', { replace: true });
+        }
     };
 
     return (
         <Modal
-            open={true}
+            open={open}
             onClose={handleClose}
             aria-labelledby="register-modal"
         >
@@ -117,7 +127,10 @@ const Register = () => {
                         Register
                     </Typography>
                     <IconButton
-                        onClick={handleClose}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleClose();
+                        }}
                         size="small"
                         sx={{ color: 'text.secondary' }}
                     >
@@ -289,7 +302,12 @@ const Register = () => {
                 <Box sx={{ textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                         Already have an account?{' '}
-                        <Link to="/login" style={{ textDecoration: 'none' }}>
+                        <Link
+                            to="/login"
+                            replace
+                            state={{ from: location.state?.from }}
+                            style={{ textDecoration: 'none' }}
+                        >
                             <Typography
                                 component="span"
                                 variant="body2"
