@@ -33,7 +33,6 @@ const modalStyle = {
 };
 
 const Register = () => {
-    const [open, setOpen] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -96,11 +95,10 @@ const Register = () => {
     };
 
     const handleClose = () => {
-        setOpen(false);
         const returnPath = typeof location.state?.from === 'string' ? location.state.from : location.state?.from?.pathname;
         if (returnPath && !['/login', '/register', '/forgot-password'].includes(returnPath)) {
             navigate(returnPath, { replace: true });
-        } else if (location.key !== 'default') {
+        } else if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
         } else {
             navigate('/', { replace: true });
@@ -109,7 +107,7 @@ const Register = () => {
 
     return (
         <Modal
-            open={open}
+            open={true}
             onClose={handleClose}
             aria-labelledby="register-modal"
         >

@@ -42,8 +42,6 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const [formErrors, setFormErrors] = useState({});
 
-    const [open, setOpen] = useState(true);
-
     const navigate = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
@@ -124,11 +122,10 @@ const Login = () => {
     };
 
     const handleClose = () => {
-        setOpen(false);
         const returnPath = typeof location.state?.from === 'string' ? location.state.from : location.state?.from?.pathname;
         if (returnPath && !['/login', '/register', '/forgot-password'].includes(returnPath)) {
             navigate(returnPath, { replace: true });
-        } else if (location.key !== 'default') {
+        } else if (window.history.state && window.history.state.idx > 0) {
             navigate(-1);
         } else {
             navigate('/', { replace: true });
@@ -136,7 +133,7 @@ const Login = () => {
     };
 
     return (
-        <Modal open={open} onClose={handleClose} aria-labelledby="login-modal">
+        <Modal open={true} onClose={handleClose} aria-labelledby="login-modal">
             <Box sx={modalStyle}>
                 {/* Header */}
                 <Box
