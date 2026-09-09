@@ -38,7 +38,9 @@ const PublicOnlyRoute = ({ children }) => {
 
 function App() {
     useEffect(() => {
-        fetch('https://emdbe.ducbkdn.space/auth/profile', {
+        const baseUrl =
+            import.meta.env.VITE_API_BASE_URL || 'https://emdbe.medicalink.online';
+        fetch(`${baseUrl}/auth/profile`, {
             method: 'GET',
             credentials: 'include',
         });

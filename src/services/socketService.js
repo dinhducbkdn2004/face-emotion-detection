@@ -42,7 +42,7 @@ export const initializeSocket = async () => {
 
         // Cấu hình kết nối - sử dụng URL đơn giản hơn
         const baseURL =
-            import.meta.env.VITE_API_BASE_URL || 'https://emdbe.ducbkdn.space';
+            import.meta.env.VITE_API_BASE_URL || 'https://emdbe.medicalink.online';
         // Thêm namespace theo đúng giao thức
         const socketURL = baseURL + '/emotion-detection';
 

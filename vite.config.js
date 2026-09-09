@@ -15,13 +15,13 @@ export default defineConfig({
         open: true,
         proxy: {
             '/api': {
-                target: 'https://emdbe.ducbkdn.space',
+                target: 'https://emdbe.medicalink.online',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path,
             },
             '/auth': {
-                target: 'https://emdbe.ducbkdn.space',
+                target: 'https://emdbe.medicalink.online',
                 changeOrigin: true,
                 secure: false,
                 rewrite: (path) => path,
